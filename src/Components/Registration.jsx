@@ -1,77 +1,62 @@
-import React, { useState } from "react";
+import React, { useEffect } from "react";
 import "../CSS/registration.css";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const backgroundToggle = {
   background: "#34445F",
   border: "0",
 };
 
-const transparentBackground = {
-  background: "transparent",
-  border: "1px solid transparent",
-};
-
 const Registration = () => {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [registerStyles, setRegisterStyles] = useState(backgroundToggle);
-  const [loginStyles, setLoginStyles] = useState({});
+  const [registerStyles, setRegisterStyles] = React.useState(backgroundToggle);
+  const [loginStyles, setLoginStyles] = React.useState({});
+  const navigate = useNavigate();
 
-  const handleRegisterClick = (e) => {
-    e.preventDefault();
+  useEffect(() => {
     setRegisterStyles(backgroundToggle);
     setLoginStyles({});
-  };
-
-  const handleLoginClick = (e) => {
-    e.preventDefault();
-    setRegisterStyles(transparentBackground);
-    setLoginStyles(backgroundToggle);
-  };
+  }, []);
 
   return (
     <div className="form-app-container">
       <form>
         <div className="toggle-container">
-          <Link to='/Register'><button
-            style={registerStyles}
-            onClick={handleRegisterClick}
-            className="toggle-btn"
-          >
+          <button style={registerStyles} className="toggle-btn">
             Register
-          </button></Link>
+          </button>
 
-          <Link to='/Login'><button
+          <button
             style={loginStyles}
-            onClick={handleLoginClick}
+            onClick={() => navigate("/Login")}
             className="toggle-btn"
           >
-            Log In
-          </button></Link>
+            <Link
+              to="/Login"
+              style={{ textDecoration: "none", color: "white" }}
+            >
+              Log In
+            </Link>
+          </button>
         </div>
         <h2>Sign Up</h2>
-        <label>
+        <label id="name">
           User Name:
-          <input
-            required
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            placeholder="User Name"
-          />
+          <input id="name" required type="text" placeholder="User Name" />
         </label>
         <br />
-        <label>
+        <label id="password">
           Password:
           <input
+            id="password"
             required
             type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
             placeholder="Password"
           />
         </label>
+        <div style={{ display: "flex", gap: "20px", justifyContent: 'center', alignItems: 'center' }}>
+          <input type="radio" name="radio" id="rad1" value="Manager" /> Manager
+          <input type="radio" name="radio" id="rad2" value="Worker" /> Worker
+        </div>
         <br />
         <button type="button" className="submit-btn">
           Sign Up

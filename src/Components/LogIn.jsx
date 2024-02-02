@@ -1,48 +1,52 @@
 import React, { useState } from "react";
 import "../CSS/registration.css";
+import { Link, useNavigate } from "react-router-dom";
 
 const backgroundToggle = {
   background: "#34445F",
   border: "0",
 };
 
-const transparentBackground = {
-  background: "transparent",
-  border: "1px solid transparent",
-};
-
 const LogIn = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [registerStyles, setRegisterStyles] = useState(backgroundToggle);
-  const [loginStyles, setLoginStyles] = useState({});
+  const [loginStyles] = useState(backgroundToggle);
+  const navigate = useNavigate();
 
-  const handleRegisterClick = (e) => {
+  const handleLogIn = (e) => {
     e.preventDefault();
-    setRegisterStyles(backgroundToggle);
-    setLoginStyles({});
+
+    if (username === "giorgi" && password === "gg") {
+      navigate("/Manager");
+    } else {
+      console.log("Login failed. Incorrect username or password.");
+    }
   };
 
-  const handleLoginClick = (e) => {
-    e.preventDefault();
-    setRegisterStyles(transparentBackground);
-    setLoginStyles(backgroundToggle);
+  const handleFormSubmit = (e) => {
+    e.preventDefault(); // Prevent the default form submission behavior
+    // Add any additional logic you want here
+    
   };
 
   return (
     <div className="form-app-container">
-      <form>
+      <form onSubmit={handleFormSubmit}>
         <div className="toggle-container">
           <button
-            style={registerStyles}
-            onClick={handleRegisterClick}
+            style={{ background: "transparent", border: "1px solid transparent" }}
+            onClick={() => navigate("/Register")}
             className="toggle-btn"
           >
-            Register
+            <Link
+              to="/Register"
+              style={{ textDecoration: "none", color: "white" }}
+            >
+              Register
+            </Link>
           </button>
           <button
             style={loginStyles}
-            onClick={handleLoginClick}
             className="toggle-btn"
           >
             Log In
@@ -71,7 +75,7 @@ const LogIn = () => {
           />
         </label>
         <br />
-        <button type="button" className="submit-btn">
+        <button type="submit" className="submit-btn" onClick={handleLogIn}>
           Log In
         </button>
       </form>

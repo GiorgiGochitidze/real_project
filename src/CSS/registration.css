@@ -9,7 +9,8 @@
 
 form{
     width: 700px;
-    height: 300px;
+    height: auto;
+    padding-block: 10px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -83,6 +84,10 @@ input:focus{
     border-radius: 20px;
     border: 1px solid transparent;
     background-color: transparent;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-decoration: none;
 }
 
 .toggle-btn:hover{
