@@ -102,7 +102,6 @@ const Workers = () => {
   };
 
   const resetTimer = () => {
-    clearInterval(timerId);
     setTimer(0);
     setTimerStart(0);
     localStorage.removeItem('timerValue');
