@@ -8,5 +8,10 @@
     "username": "gigi",
     "password": "gigi",
     "userType": "Worker"
+  },
+  {
+    "username": "zurabi",
+    "password": "zurika",
+    "userType": "Worker"
   }
 ]
