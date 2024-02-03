@@ -9,104 +9,80 @@ const Workers = () => {
   const [currentTime, setCurrentTime] = useState(null);
   const [timer, setTimer] = useState(0);
   const [timerId, setTimerId] = useState(null);
+  const [timerStart, setTimerStart] = useState(0);
 
-  // Fetch time function remains the same
+  const fetchTime = () => {
+    const currentDateObj = new Date();
+    setCurrentDate(currentDateObj.toDateString());
+    setCurrentTime(currentDateObj.toLocaleTimeString());
+  };
 
   useEffect(() => {
     // Fetch time initially
     fetchTime();
 
-    // Check local storage for saved timer value
+    // Check local storage for saved timer value and start time
     const savedTimerValue = parseInt(localStorage.getItem('timerValue'), 10) || 0;
+    const savedTimerStart = parseInt(localStorage.getItem('timerStart'), 10) || 0;
+
     setTimer(savedTimerValue);
+    setTimerStart(savedTimerStart);
 
     // Set up interval to fetch time every second (adjust the interval as needed)
-    const intervalId = setInterval(fetchTime, 1000);
+    const intervalId = setInterval(() => {
+      fetchTime();
+
+      if (timerStart > 0) {
+        const elapsedSeconds = Math.floor((Date.now() - timerStart) / 1000);
+        setTimer(savedTimerValue + elapsedSeconds);
+      }
+    }, 1000);
 
     // Clear the interval when the component is unmounted
     return () => clearInterval(intervalId);
-  }, []);
+  }, [timerStart]);
 
-  // Add this function to your code
-const fetchTime = () => {
-    // Implement the logic to fetch and update the current time
-    // For example, you can use JavaScript Date object
-    const currentDateObj = new Date();
-    setCurrentDate(currentDateObj.toDateString());
-    setCurrentTime(currentDateObj.toLocaleTimeString());
-  };
-  
   const startTimer = () => {
-    // Clear the existing timer interval if it exists
     clearInterval(timerId);
-  
-    // Get the user's location only if not fetched already
+
     if (!navigator.geolocation.fetchedLocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
-          // console.log(`User: ${username}, Location: ${latitude}, ${longitude}`);
-          navigator.geolocation.fetchedLocation = true; // Set the flag to true
-        },
-        (error) => {
-          console.error('Error getting location:', error.message);
-        }
-      );
-    }
-  
-    // Start the timer
-    const newTimerId = setInterval(() => {
-      setTimer((prevTimer) => {
-        // Save timer value to local storage
-        localStorage.setItem('timerValue', String(prevTimer + 1));
-        return prevTimer + 1;
-      });
-    }, 1000);
-  
-    setTimerId(newTimerId);
-  };
-  
-  const clockIn = () => {
-    // Get the user's location only if not fetched already
-    if (!navigator.geolocation.fetchedLocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          console.log(`User: ${username}, Location: ${latitude}, ${longitude}`);
-          navigator.geolocation.fetchedLocation = false; // Set the flag to true
-          // Use the correct timer value from state
+          navigator.geolocation.fetchedLocation = true;
           saveTimer(timer + 1, { latitude, longitude });
         },
         (error) => {
           console.error('Error getting location:', error.message);
-          // Use the correct timer value from state
           saveTimer(timer + 1);
         }
       );
     } else {
-      // Use the previously fetched location
-      // Use the correct timer value from state
       saveTimer(timer + 1);
     }
   };
 
-  const clockOut = () => {
-    // Call the backend API to save the last working time
-    saveTimer(timer);
+  const clockIn = () => {
+    if (!timerStart) {
+      setTimerStart(Date.now());
+      localStorage.setItem('timerStart', String(Date.now()));
+    }
 
-    // Stop the timer
+    startTimer();
+  };
+
+  const clockOut = () => {
+    saveTimer(timer);
     clearInterval(timerId);
   };
-  
+
   const saveTimer = (timerValue, location) => {
-    // Include location information in the request body if available
     const requestBody = {
       username,
       workingTime: timerValue,
       location: location || null,
     };
-  
-    // Fetch to your backend API (replace with your actual backend URL)
+
     fetch('https://tnapp.onrender.com/api/saveWorkingTime', {
       method: 'POST',
       headers: {
@@ -121,18 +97,16 @@ const fetchTime = () => {
       .catch((error) => {
         console.error('Error saving working time:', error.message);
       });
+
+    localStorage.setItem('timerValue', String(timerValue));
   };
-  
 
   const resetTimer = () => {
-    // Stop the timer
     clearInterval(timerId);
-
-    // Reset the timer to 00:00:00
     setTimer(0);
-
-    // Clear the saved timer value in local storage
+    setTimerStart(0);
     localStorage.removeItem('timerValue');
+    localStorage.removeItem('timerStart');
   };
 
   return (
@@ -140,7 +114,7 @@ const fetchTime = () => {
       <header>
         <nav>
           <p>Welcome, {username}!</p>
-          <button onClick={() => navigate('/LogIn')}>Log Out</button>
+          <button onClick={() => { resetTimer(); navigate('/LogIn'); }}>Log Out</button>
         </nav>
       </header>
       <main className='mains'>
@@ -154,16 +128,15 @@ const fetchTime = () => {
         <div className="time-container">
           <h3>{formatTime(timer)}</h3>
 
-          <button onClick={() => { startTimer(); clockIn(); }}>Clock In</button>
+          <button onClick={clockIn}>Clock In</button>
           <button onClick={clockOut}>Clock Out</button>
-          <button style={{background: 'red'}} onClick={resetTimer}>Reset</button>
+          <button style={{ background: 'red' }} onClick={resetTimer}>Reset</button>
         </div>
       </main>
     </>
   );
 };
 
-// Helper function to format seconds into HH:MM:SS
 const formatTime = (seconds) => {
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
