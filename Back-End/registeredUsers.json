@@ -19,5 +19,10 @@
     "username": "zura",
     "password": "zurika",
     "userType": "Worker"
+  },
+  {
+    "username": "Tornike",
+    "password": "toko",
+    "userType": "Manager"
   }
 ]

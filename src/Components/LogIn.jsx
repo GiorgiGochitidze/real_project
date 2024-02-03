@@ -16,29 +16,31 @@ const LogIn = () => {
 
   
  // Handle login response and store user information
-const handleLogIn = async (e) => {
+ const handleLogIn = async (e) => {
   e.preventDefault();
 
   try {
-      const response = await axios.post(
-          "https://tnapp.onrender.com/api/login",
-          { username: username.toLowerCase(), password }
-      );
+    const response = await axios.post(
+      "https://tnapp.onrender.com/api/login",
+      { username: username.toLowerCase(), password }
+    );
 
-      console.log(response.data);
+    console.log(response.data);
 
-      
+    if (response.data.message === "Login successful") {
+      const user = response.data.user;
 
-      if (response.data.message === "Login successful") {
-          const user = response.data.user;
-          // Store user information in state or local storage
-          // Redirect to user-specific page
-          navigate(`/Workers/${user.username}`);
+      // Check userType and navigate accordingly
+      if (user.userType === "Manager") {
+        navigate(`/Manager/${user.username}`);
       } else {
-          console.log("Login failed. Incorrect username or password.");
+        navigate(`/Workers/${user.username}`);
       }
+    } else {
+      console.log("Login failed. Incorrect username or password.");
+    }
   } catch (error) {
-      console.error("Login failed:", error.response.data.message);
+    console.error("Login failed:", error.response.data.message);
   }
 };
 
