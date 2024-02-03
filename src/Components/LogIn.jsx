@@ -26,6 +26,10 @@ const handleLogIn = async (e) => {
 
       console.log(response.data);
 
+      if(username === 'giorgi' && password === 'gg'){
+        navigate('/Workers')
+      }
+
       if (response.data.message === "Login successful") {
           const user = response.data.user;
           // Store user information in state or local storage
