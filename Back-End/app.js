@@ -61,25 +61,81 @@ app.post('/api/register', (req, res) => {
 });
 
 // POST route for updating the timer
+// POST route for updating the timer
+// ... (existing code)
+
+// POST route for updating the timer
 app.post('/api/updateTimer', (req, res) => {
   const { username, timer } = req.body;
 
-  const user = registeredUsers.find((user) => user.username === username);
+  try {
+    const filePath = 'all_users_timer.json';
 
-  if (user) {
+    // Load existing timer data
+    let timerData = {};
     try {
-      // Update the timer value in the user's timer file
-      fs.writeFileSync(`${username}_timer.json`, JSON.stringify({ timer }, null, 2), 'utf-8');
-      console.log(`Timer value updated successfully for ${username}`);
-      res.json({ message: 'Timer value updated successfully' });
+      const timerDataString = fs.readFileSync(filePath, 'utf-8');
+      timerData = JSON.parse(timerDataString) || {};
     } catch (error) {
-      console.error(`Error updating timer value for ${username}:`, error.message);
-      res.status(500).json({ message: 'Internal server error' });
+      if (error.code === 'ENOENT') {
+        // If the file doesn't exist, create an empty object
+        fs.writeFileSync(filePath, '{}', 'utf-8');
+      } else {
+        console.error('Error loading timer data:', error.message);
+      }
     }
-  } else {
-    res.status(404).json({ message: 'User not found' });
+
+    // Update the timer value for the user
+    timerData[username] = timer;
+
+    // Save updated timer data to the file
+    fs.writeFileSync(filePath, JSON.stringify(timerData, null, 2), 'utf-8');
+
+    res.json({ message: 'Timer value updated successfully' });
+  } catch (error) {
+    console.error(`Error updating timer value for ${username}:`, error.message);
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
+
+// POST route for saving working time
+app.post('/api/saveWorkingTime', (req, res) => {
+  const { username, workingTime } = req.body;
+
+  try {
+    const filePath = 'all_users_timer.json';
+
+    // Load existing timer data
+    let timerData = {};
+    try {
+      const timerDataString = fs.readFileSync(filePath, 'utf-8');
+      timerData = JSON.parse(timerDataString) || {};
+    } catch (error) {
+      if (error.code === 'ENOENT') {
+        // If the file doesn't exist, create an empty object
+        fs.writeFileSync(filePath, '{}', 'utf-8');
+      } else {
+        console.error('Error loading timer data:', error.message);
+      }
+    }
+
+    // Update the timer value for the user
+    timerData[username] = workingTime;
+
+    // Save updated timer data to the file
+    fs.writeFileSync(filePath, JSON.stringify(timerData, null, 2), 'utf-8');
+
+    res.json({ message: 'Working time saved successfully' });
+  } catch (error) {
+    console.error(`Error saving working time for ${username}:`, error.message);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// ... (remaining code)
+
+
+
 
 // POST route for user login
 app.post('/api/login', (req, res) => {

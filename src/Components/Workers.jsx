@@ -35,6 +35,9 @@ const Workers = () => {
   }, []); // Empty dependency array means this effect runs once when the component mounts
 
   const startTimer = () => {
+    // Clear the existing timer interval if it exists
+    clearInterval(timerId);
+
     // Start the timer
     const newTimerId = setInterval(() => {
       setTimer((prevTimer) => prevTimer + 1);
@@ -57,14 +60,14 @@ const Workers = () => {
   };
 
   const saveTimer = (timerValue) => {
-    fetch('http://localhost:5000/api/updateTimer', {
+    fetch('http://localhost:5000/api/saveWorkingTime', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         username,
-        timer: timerValue,
+        workingTime: timerValue,
       }),
     })
       .then((response) => response.json())
@@ -72,11 +75,14 @@ const Workers = () => {
         console.log(data.message);
       })
       .catch((error) => {
-        console.error('Error updating timer:', error.message);
+        console.error('Error saving working time:', error.message);
       });
   };
 
   const resetTimer = () => {
+    // Stop the timer
+    clearInterval(timerId);
+
     // Reset the timer to 00:00:00
     setTimer(0);
   };

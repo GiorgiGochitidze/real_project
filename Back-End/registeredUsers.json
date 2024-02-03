@@ -2,6 +2,12 @@
   {
     "username": "giorgi",
     "password": "gochitidze",
+    "userType": "Worker",
+    "workingTime": 5
+  },
+  {
+    "username": "gigi",
+    "password": "gigi",
     "userType": "Worker"
   }
 ]
