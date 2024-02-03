@@ -47,14 +47,16 @@ const Workers = () => {
   
     // Start the timer
     const newTimerId = setInterval(() => {
-      setTimer((prevTimer) => prevTimer + 1);
-      // Save timer value to local storage
-      localStorage.setItem('timerValue', String(prevTimer + 1)); // <-- Use prevTimer
+      setTimer((prevTimer) => {
+        // Save timer value to local storage
+        localStorage.setItem('timerValue', String(prevTimer + 1));
+        return prevTimer + 1;
+      });
     }, 1000);
   
     setTimerId(newTimerId);
   };
-
+  
   const clockIn = () => {
     // Get the user's location only if not fetched already
     if (!navigator.geolocation.fetchedLocation) {
@@ -63,16 +65,19 @@ const Workers = () => {
           const { latitude, longitude } = position.coords;
           console.log(`User: ${username}, Location: ${latitude}, ${longitude}`);
           navigator.geolocation.fetchedLocation = false; // Set the flag to true
-          saveTimer(timer, { latitude, longitude });
+          // Use the correct timer value from state
+          saveTimer(timer + 1, { latitude, longitude });
         },
         (error) => {
           console.error('Error getting location:', error.message);
-          saveTimer(timer);
+          // Use the correct timer value from state
+          saveTimer(timer + 1);
         }
       );
     } else {
       // Use the previously fetched location
-      saveTimer(timer);
+      // Use the correct timer value from state
+      saveTimer(timer + 1);
     }
   };
 
@@ -83,7 +88,7 @@ const Workers = () => {
     // Stop the timer
     clearInterval(timerId);
   };
-
+  
   const saveTimer = (timerValue, location) => {
     // Include location information in the request body if available
     const requestBody = {
