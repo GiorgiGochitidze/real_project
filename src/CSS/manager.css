@@ -55,11 +55,30 @@ main{
 }
 
 .options-list p:hover{
-    background-color: gray;
+    background-color: rgb(193, 193, 193);
     cursor: pointer;
 }
 
 .map-container{
     width: 100%;
     height: 100vh;
+}
+
+.countrys{
+    display: flex;
+    flex-direction: column;
+}
+
+.sublist{
+    width: 100%;
+}
+
+.sublist p{
+    width: 100%;
+    height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: 0.2s all ease-in-out;
+    padding-left: 20px;
 }
