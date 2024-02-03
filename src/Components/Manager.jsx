@@ -50,7 +50,7 @@ const Manager = () => {
         </nav>
       </header>
 
-      <main className=".main">
+      <main className="main">
         {menu && (
           <div className="options-list">
             <p className="countrys" onClick={handleCountryClick}>

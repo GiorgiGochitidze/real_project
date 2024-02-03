@@ -37,19 +37,52 @@ const Workers = () => {
   const startTimer = () => {
     // Clear the existing timer interval if it exists
     clearInterval(timerId);
-
+  
+    // Get the user's location only if not fetched already
+    if (!navigator.geolocation.fetchedLocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          // console.log(`User: ${username}, Location: ${latitude}, ${longitude}`);
+          navigator.geolocation.fetchedLocation = true; // Set the flag to true
+        },
+        (error) => {
+          console.error('Error getting location:', error.message);
+        }
+      );
+    }
+  
     // Start the timer
     const newTimerId = setInterval(() => {
       setTimer((prevTimer) => prevTimer + 1);
     }, 1000); // 1000 milliseconds = 1 second
-
+  
     setTimerId(newTimerId);
   };
+  
+  
 
   const clockIn = () => {
-    // Call the backend API to save working time
-    saveTimer(timer);
+    // Get the user's location only if not fetched already
+    if (!navigator.geolocation.fetchedLocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          console.log(`User: ${username}, Location: ${latitude}, ${longitude}`);
+          navigator.geolocation.fetchedLocation = false; // Set the flag to true
+          saveTimer(timer, { latitude, longitude });
+        },
+        (error) => {
+          console.error('Error getting location:', error.message);
+          saveTimer(timer);
+        }
+      );
+    } else {
+      // Use the previously fetched location
+      saveTimer(timer);
+    }
   };
+  
 
   const clockOut = () => {
     // Call the backend API to save the last working time
@@ -59,16 +92,20 @@ const Workers = () => {
     clearInterval(timerId);
   };
 
-  const saveTimer = (timerValue) => {
+  const saveTimer = (timerValue, location) => {
+    // Include location information in the request body if available
+    const requestBody = {
+      username,
+      workingTime: timerValue,
+      location: location || null,
+    };
+  
     fetch('http://localhost:5000/api/saveWorkingTime', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        username,
-        workingTime: timerValue,
-      }),
+      body: JSON.stringify(requestBody),
     })
       .then((response) => response.json())
       .then((data) => {
@@ -95,7 +132,7 @@ const Workers = () => {
           <button onClick={() => navigate('/LogIn')}>Log Out</button>
         </nav>
       </header>
-      <main>
+      <main className='mains'>
         <h1>
           <p>Current Date: {currentDate}</p>
           <p>Current Time: {currentTime}</p>
