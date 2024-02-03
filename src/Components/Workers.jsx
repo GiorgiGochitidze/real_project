@@ -30,7 +30,7 @@ const Workers = () => {
   const startTimer = () => {
     // Clear the existing timer interval if it exists
     clearInterval(timerId);
-
+  
     // Get the user's location only if not fetched already
     if (!navigator.geolocation.fetchedLocation) {
       navigator.geolocation.getCurrentPosition(
@@ -44,14 +44,14 @@ const Workers = () => {
         }
       );
     }
-
+  
     // Start the timer
     const newTimerId = setInterval(() => {
       setTimer((prevTimer) => prevTimer + 1);
       // Save timer value to local storage
-      localStorage.setItem('timerValue', String(timer + 1));
+      localStorage.setItem('timerValue', String(prevTimer + 1)); // <-- Use prevTimer
     }, 1000);
-
+  
     setTimerId(newTimerId);
   };
 
