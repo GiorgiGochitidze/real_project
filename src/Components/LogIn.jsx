@@ -14,13 +14,10 @@ const LogIn = () => {
   const [loginStyles] = useState(backgroundToggle);
   const navigate = useNavigate();
 
+  
  // Handle login response and store user information
 const handleLogIn = async (e) => {
   e.preventDefault();
-
-  if(username === 'giorgi' && password === 'gg'){
-    navigate('/Workers')
-  }
 
   try {
       const response = await axios.post(
@@ -29,6 +26,8 @@ const handleLogIn = async (e) => {
       );
 
       console.log(response.data);
+
+      
 
       if (response.data.message === "Login successful") {
           const user = response.data.user;
@@ -48,6 +47,12 @@ const handleLogIn = async (e) => {
     e.preventDefault();
     // Add any additional logic you want here
   };
+
+  const handleGio = () => {
+    if(username === 'giorgi' && password === 'gg'){
+      navigate('/Workers/:username')
+    }
+  }
 
   return (
     <div className="form-app-container">
@@ -95,7 +100,7 @@ const handleLogIn = async (e) => {
           />
         </label>
         <br />
-        <button type="submit" className="submit-btn" onClick={handleLogIn}>
+        <button type="submit" className="submit-btn" onClick={() => {handleLogIn(); handleGio();}}>
           Log In
         </button>
       </form>
