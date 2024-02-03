@@ -14,43 +14,31 @@ const LogIn = () => {
   const [loginStyles] = useState(backgroundToggle);
   const navigate = useNavigate();
 
-  const handleLogIn = async (e) => {
-    e.preventDefault();
+ // Handle login response and store user information
+const handleLogIn = async (e) => {
+  e.preventDefault();
 
-    if(username === 'giorgi' && password === 'gg'){
-      navigate('/Manager')
-    }
-  
-    try {
+  try {
       const response = await axios.post(
-        "http://localhost:5000/api/login",
-        { username: username.toLowerCase(), password }
+          "http://localhost:5000/api/login",
+          { username: username.toLowerCase(), password }
       );
-  
+
       console.log(response.data);
-  
+
       if (response.data.message === "Login successful") {
-        // Assuming you have a userType check here
-        if (response.data.userType === "Worker") {
-          // Redirect to the Workers page
-          navigate("/Workers");
-        } else {
-          console.log("Login failed. User is not a Worker.");
-        }
+          const user = response.data.user;
+          // Store user information in state or local storage
+          // Redirect to user-specific page
+          navigate(`/Workers/${user.username}`);
       } else {
-        console.log("Login failed. Incorrect username or password.");
-        
-        // Clear input field values on failed login
-        setUsername("");
-        setPassword("");
+          console.log("Login failed. Incorrect username or password.");
       }
-    } catch (error) {
+  } catch (error) {
       console.error("Login failed:", error.response.data.message);
-      // Clear input field values on failed login
-      setUsername("");
-      setPassword("");
-    }
-  };  
+  }
+};
+
 
   const handleFormSubmit = (e) => {
     e.preventDefault();

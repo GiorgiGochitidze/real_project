@@ -1,0 +1,48 @@
+header{
+    width: 100%;
+    height: 80px;
+    overflow: hidden;
+    box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
+}
+
+nav{
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: space-evenly;
+    align-items: center;
+}
+
+main{
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    /* justify-content: center; */
+    align-items: center;
+    flex-direction: column;
+}
+
+h2{
+    margin-top: 50px;
+}
+
+.time-container{
+    width: 400px;
+    height: 300px;
+    box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+    margin-top: 20px;
+    border-radius: 20px;
+    display: flex;
+    justify-content: flex-end;
+    padding-block: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 10px;
+    position: relative;
+}
+
+.time-container h3{
+    position: absolute;
+    top: 50%;
+}

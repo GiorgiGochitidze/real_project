@@ -14,8 +14,8 @@ let registeredUsers = [];
 // Load existing data from a file on server startup
 const loadData = () => {
   try {
-    const data = fs.readFileSync('registeredUsers.json', 'utf-8');
-    registeredUsers = JSON.parse(data);
+    const userData = fs.readFileSync('registeredUsers.json', 'utf-8');
+    registeredUsers = JSON.parse(userData) || [];
   } catch (error) {
     if (error.code === 'ENOENT') {
       // If the file doesn't exist, create an empty array and save it to the file
@@ -30,6 +30,7 @@ const loadData = () => {
 const saveData = () => {
   try {
     fs.writeFileSync('registeredUsers.json', JSON.stringify(registeredUsers, null, 2), 'utf-8');
+    console.log('Data saved successfully');
   } catch (error) {
     console.error('Error saving data:', error.message);
   }
@@ -39,49 +40,69 @@ const saveData = () => {
 app.post('/api/register', (req, res) => {
   const { username, password, userType } = req.body;
 
-  // Log the registration data on the backend with new lines
   console.log('\nUser Registration Data (Backend):', { username, password, userType });
 
-  // Check if username already exists
-  if (registeredUsers.find(user => user.username === username)) {
+  if (registeredUsers.find((user) => user.username === username)) {
     return res.status(400).json({ message: 'Username already exists' });
   }
 
-  // Store user information
-  registeredUsers.push({ username, password, userType });
+  // Create a new file for the user and save the timer value
+  try {
+    fs.writeFileSync(`${username}_timer.json`, JSON.stringify({ timer: 0 }, null, 2), 'utf-8');
+    console.log(`Timer file created and saved successfully for ${username}`);
+  } catch (error) {
+    console.error(`Error creating timer file for ${username}:`, error.message);
+  }
 
-  // Save data to the file
+  registeredUsers.push({ username, password, userType });
   saveData();
 
   res.json({ message: 'User registered successfully' });
 });
 
+// POST route for updating the timer
+app.post('/api/updateTimer', (req, res) => {
+  const { username, timer } = req.body;
+
+  const user = registeredUsers.find((user) => user.username === username);
+
+  if (user) {
+    try {
+      // Update the timer value in the user's timer file
+      fs.writeFileSync(`${username}_timer.json`, JSON.stringify({ timer }, null, 2), 'utf-8');
+      console.log(`Timer value updated successfully for ${username}`);
+      res.json({ message: 'Timer value updated successfully' });
+    } catch (error) {
+      console.error(`Error updating timer value for ${username}:`, error.message);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  } else {
+    res.status(404).json({ message: 'User not found' });
+  }
+});
+
 // POST route for user login
 app.post('/api/login', (req, res) => {
-    const { username, password } = req.body;
-  
-    // Check if username and password match any registered user (case-insensitive)
-    const user = registeredUsers.find(user => 
-      user.username.toLowerCase() === username.toLowerCase() && user.password === password
-    );
-  
-    if (user) {
-      res.json({ message: 'Login successful', userType: user.userType });
-    } else {
-      res.status(401).json({ message: 'Login failed. Incorrect username or password.' });
-    }
+  const { username, password } = req.body;
+
+  const user = registeredUsers.find((user) => user.username === username && user.password === password);
+
+  if (user) {
+    res.json({ message: 'Login successful', user });
+  } else {
+    res.status(401).json({ message: 'Login failed. Incorrect username or password.' });
+  }
 });
 
 // GET route for the root
 app.get('/', (req, res) => {
-  // Replace the default message with an object containing registration data
   res.json({
     message: 'Root of the server',
     registrationData: registeredUsers,
   });
 });
 
-// Load existing data from file on server startup
+// Load existing data from files on server startup
 loadData();
 
 app.listen(PORT, () => {

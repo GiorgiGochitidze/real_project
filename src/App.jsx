@@ -15,7 +15,9 @@ function App() {
         <Route path="/Register" element={<Registration />} />
         <Route path="/Login" element={<LogIn />} />
         <Route path="/Manager" element={<Manager />} />
-        <Route path="/Workers" element={<Workers />} />
+
+        {/* Use dynamic route for /Workers/:username */}
+        <Route path="/Workers/:username" element={<Workers />} />
       </Routes>
     </Router>
   );

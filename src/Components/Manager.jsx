@@ -41,7 +41,7 @@ const Manager = () => {
 
   return (
     <>
-      <header>
+      <header className=".header">
         <nav>
           <button onClick={() => (menu ? setMenu(false) : setMenu(true))}>
             MENU
@@ -50,7 +50,7 @@ const Manager = () => {
         </nav>
       </header>
 
-      <main>
+      <main className=".main">
         {menu && (
           <div className="options-list">
             <p className="countrys" onClick={handleCountryClick}>
