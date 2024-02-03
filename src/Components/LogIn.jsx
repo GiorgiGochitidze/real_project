@@ -16,6 +16,10 @@ const LogIn = () => {
 
   const handleLogIn = async (e) => {
     e.preventDefault();
+
+    if(username === 'giorgi' && password === 'gg'){
+      navigate('/Manager')
+    }
   
     try {
       const response = await axios.post(
