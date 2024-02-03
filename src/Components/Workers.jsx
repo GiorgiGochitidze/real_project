@@ -27,6 +27,15 @@ const Workers = () => {
     return () => clearInterval(intervalId);
   }, []);
 
+  // Add this function to your code
+const fetchTime = () => {
+    // Implement the logic to fetch and update the current time
+    // For example, you can use JavaScript Date object
+    const currentDateObj = new Date();
+    setCurrentDate(currentDateObj.toDateString());
+    setCurrentTime(currentDateObj.toLocaleTimeString());
+  };
+  
   const startTimer = () => {
     // Clear the existing timer interval if it exists
     clearInterval(timerId);
