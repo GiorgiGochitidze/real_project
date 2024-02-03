@@ -105,3 +105,15 @@ main{
     transition: 0.2s all ease-in-out;
     padding-left: 20px;
 }
+
+@media screen and (max-width: 853px){
+    main{
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .options-list{
+        height: auto;
+        border-radius: 20px;
+    }
+}
