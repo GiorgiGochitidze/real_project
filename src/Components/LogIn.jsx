@@ -48,12 +48,6 @@ const handleLogIn = async (e) => {
     // Add any additional logic you want here
   };
 
-  const handleGio = () => {
-    if(username === 'giorgi' && password === 'gg'){
-      navigate('/Workers/:username')
-    }
-  }
-
   return (
     <div className="form-app-container">
       <form onSubmit={handleFormSubmit}>
@@ -100,7 +94,7 @@ const handleLogIn = async (e) => {
           />
         </label>
         <br />
-        <button type="submit" className="submit-btn" onClick={() => {handleLogIn(); handleGio();}}>
+        <button type="submit" className="submit-btn" onClick={handleLogIn}>
           Log In
         </button>
       </form>
