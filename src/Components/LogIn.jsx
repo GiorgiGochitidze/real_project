@@ -32,7 +32,7 @@ const LogIn = () => {
 
       // Check userType and navigate accordingly
       if (user.userType === "Manager") {
-        navigate(`/Manager/${user.username}`);
+        navigate(`/Manager`);
       } else {
         navigate(`/Workers/${user.username}`);
       }
