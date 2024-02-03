@@ -5,6 +5,7 @@ import Home from './Components/Home';
 import Registration from './Components/Registration';
 import LogIn from './Components/LogIn';
 import Manager from './Components/Manager';
+import Workers from './Components/Workers';
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
         <Route path="/Register" element={<Registration />} />
         <Route path="/Login" element={<LogIn />} />
         <Route path="/Manager" element={<Manager />} />
+        <Route path="/Workers" element={<Workers />} />
       </Routes>
     </Router>
   );

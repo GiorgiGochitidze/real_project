@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import "../CSS/registration.css";
 import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
+import "../CSS/registration.css";
 
 const backgroundToggle = {
   background: "#34445F",
@@ -13,20 +14,43 @@ const LogIn = () => {
   const [loginStyles] = useState(backgroundToggle);
   const navigate = useNavigate();
 
-  const handleLogIn = (e) => {
+  const handleLogIn = async (e) => {
     e.preventDefault();
-
-    if (username === "giorgi" && password === "gg") {
-      navigate("/Manager");
-    } else {
-      console.log("Login failed. Incorrect username or password.");
+  
+    try {
+      const response = await axios.post(
+        "http://localhost:5000/api/login",
+        { username: username.toLowerCase(), password }
+      );
+  
+      console.log(response.data);
+  
+      if (response.data.message === "Login successful") {
+        // Assuming you have a userType check here
+        if (response.data.userType === "Worker") {
+          // Redirect to the Workers page
+          navigate("/Workers");
+        } else {
+          console.log("Login failed. User is not a Worker.");
+        }
+      } else {
+        console.log("Login failed. Incorrect username or password.");
+        
+        // Clear input field values on failed login
+        setUsername("");
+        setPassword("");
+      }
+    } catch (error) {
+      console.error("Login failed:", error.response.data.message);
+      // Clear input field values on failed login
+      setUsername("");
+      setPassword("");
     }
-  };
+  };  
 
   const handleFormSubmit = (e) => {
-    e.preventDefault(); // Prevent the default form submission behavior
+    e.preventDefault();
     // Add any additional logic you want here
-    
   };
 
   return (
