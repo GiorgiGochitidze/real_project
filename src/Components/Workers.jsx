@@ -113,7 +113,7 @@ const Workers = () => {
       <header>
         <nav>
           <p>Welcome, {username}!</p>
-          <button onClick={() => { resetTimer(); navigate('/LogIn'); }}>Log Out</button>
+          <button onClick={() => navigate('/LogIn')}>Log Out</button>
         </nav>
       </header>
       <main className='mains'>
