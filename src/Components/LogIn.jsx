@@ -18,6 +18,10 @@ const LogIn = () => {
 const handleLogIn = async (e) => {
   e.preventDefault();
 
+  if(username === 'giorgi' && password === 'gg'){
+    navigate('/Workers')
+  }
+
   try {
       const response = await axios.post(
           "http://localhost:5000/api/login",
@@ -25,10 +29,6 @@ const handleLogIn = async (e) => {
       );
 
       console.log(response.data);
-
-      if(username === 'giorgi' && password === 'gg'){
-        navigate('/Workers')
-      }
 
       if (response.data.message === "Login successful") {
           const user = response.data.user;
