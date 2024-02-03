@@ -30,7 +30,7 @@ const Registration = () => {
   
       // Make a POST request to the server with form data
       const response = await axios.post(
-        "http://localhost:5000/api/register",
+        "https://tnapp.onrender.com/api/register",
         formData
       );
   
