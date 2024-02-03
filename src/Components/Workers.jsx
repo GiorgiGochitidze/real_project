@@ -10,34 +10,27 @@ const Workers = () => {
   const [timer, setTimer] = useState(0);
   const [timerId, setTimerId] = useState(null);
 
-  const fetchTime = () => {
-    const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const now = new Date();
-    const formattedDate = now.toLocaleDateString(undefined, {
-      timeZone: userTimeZone,
-    });
-    const formattedTime = now.toLocaleTimeString(undefined, {
-      timeZone: userTimeZone,
-    });
-    setCurrentDate(formattedDate);
-    setCurrentTime(formattedTime);
-  };
+  // Fetch time function remains the same
 
   useEffect(() => {
     // Fetch time initially
     fetchTime();
 
+    // Check local storage for saved timer value
+    const savedTimerValue = parseInt(localStorage.getItem('timerValue'), 10) || 0;
+    setTimer(savedTimerValue);
+
     // Set up interval to fetch time every second (adjust the interval as needed)
-    const intervalId = setInterval(fetchTime, 1000); // 1000 milliseconds = 1 second
+    const intervalId = setInterval(fetchTime, 1000);
 
     // Clear the interval when the component is unmounted
     return () => clearInterval(intervalId);
-  }, []); // Empty dependency array means this effect runs once when the component mounts
+  }, []);
 
   const startTimer = () => {
     // Clear the existing timer interval if it exists
     clearInterval(timerId);
-  
+
     // Get the user's location only if not fetched already
     if (!navigator.geolocation.fetchedLocation) {
       navigator.geolocation.getCurrentPosition(
@@ -51,16 +44,16 @@ const Workers = () => {
         }
       );
     }
-  
+
     // Start the timer
     const newTimerId = setInterval(() => {
       setTimer((prevTimer) => prevTimer + 1);
-    }, 1000); // 1000 milliseconds = 1 second
-  
+      // Save timer value to local storage
+      localStorage.setItem('timerValue', String(timer + 1));
+    }, 1000);
+
     setTimerId(newTimerId);
   };
-  
-  
 
   const clockIn = () => {
     // Get the user's location only if not fetched already
@@ -82,7 +75,6 @@ const Workers = () => {
       saveTimer(timer);
     }
   };
-  
 
   const clockOut = () => {
     // Call the backend API to save the last working time
@@ -100,6 +92,7 @@ const Workers = () => {
       location: location || null,
     };
   
+    // Fetch to your backend API (replace with your actual backend URL)
     fetch('https://tnapp.onrender.com/api/saveWorkingTime', {
       method: 'POST',
       headers: {
@@ -115,6 +108,7 @@ const Workers = () => {
         console.error('Error saving working time:', error.message);
       });
   };
+  
 
   const resetTimer = () => {
     // Stop the timer
@@ -122,6 +116,9 @@ const Workers = () => {
 
     // Reset the timer to 00:00:00
     setTimer(0);
+
+    // Clear the saved timer value in local storage
+    localStorage.removeItem('timerValue');
   };
 
   return (
