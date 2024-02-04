@@ -1,13 +1,12 @@
 const express = require("express");
 const http = require("http");
-const WebSocket = require("ws");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const fs = require("fs");
+const createWebSocketServer = require("./websocket-server");
 
 const app = express();
 const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
 const PORT = 5000;
 
 app.use(cors());
@@ -18,6 +17,7 @@ let registeredUsers = [];
 server.listen(5001, () => {
   console.log(`WebSocket server is running on http://localhost:5001`);
 });
+
 
 // Load existing data from a file on server startup
 const loadData = () => {
@@ -48,12 +48,9 @@ const saveData = () => {
   }
 };
 
-// WebSocket connections handling
-wss.on('connection', (ws) => {
-  // Send initial data when a new connection is established
-  ws.send(JSON.stringify({ message: 'Connected to WebSocket server' }));
-});
+const wss = createWebSocketServer(server);
 
+// Set WebSocket server in app for access in routes
 app.set("wss", wss); // Set WebSocket server in app for access in routes
 
 // POST route for user registration
