@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import '../CSS/workers.css';
+import React, { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import "../CSS/workers.css";
 
 const Workers = () => {
   const { username } = useParams();
@@ -9,15 +9,50 @@ const Workers = () => {
   const [currentTime, setCurrentTime] = useState(null);
   const [timer, setTimer] = useState(0);
   const [timerId, setTimerId] = useState(null);
+  const [ws, setWs] = useState(null); // WebSocket state
+  const [currentLocation, setCurrentLocation] = useState(null);
 
   // Fetch time function remains the same
+
+  useEffect(() => {
+    // Establish WebSocket connection
+    const socket = new WebSocket("ws://tnapp.onrender.com/"); // Replace with your WebSocket server URL
+
+    socket.onopen = () => {
+      console.log("WebSocket connection opened");
+      setWs(socket);
+    };
+
+    socket.onclose = () => {
+      console.log("WebSocket connection closed");
+    };
+
+    // Listen for WebSocket messages
+    socket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+
+      // Check the type of message (e.g., 'locationUpdate')
+      if (data.type === "locationUpdate") {
+        // Update the current location state
+        setCurrentLocation(data.location);
+      }
+    };
+
+    // Cleanup on component unmount
+    return () => {
+      if (ws) {
+        ws.close();
+      }
+    };
+  }, []); // Empty dependency array means this useEffect runs once on mount
 
   useEffect(() => {
     // Fetch time initially
     fetchTime();
 
     // Check local storage for saved timer value
-    const savedTimerValue = parseInt(localStorage.getItem('timerValue'), 10) || 0;
+    const savedTimerValue =
+      parseInt(localStorage.getItem("timerValue"), 10) || 0;
     setTimer(savedTimerValue);
 
     // Set up interval to fetch time every second (adjust the interval as needed)
@@ -28,18 +63,18 @@ const Workers = () => {
   }, []);
 
   // Add this function to your code
-const fetchTime = () => {
+  const fetchTime = () => {
     // Implement the logic to fetch and update the current time
     // For example, you can use JavaScript Date object
     const currentDateObj = new Date();
     setCurrentDate(currentDateObj.toDateString());
     setCurrentTime(currentDateObj.toLocaleTimeString());
   };
-  
+
   const startTimer = () => {
     // Clear the existing timer interval if it exists
     clearInterval(timerId);
-  
+
     // Get the user's location only if not fetched already
     if (!navigator.geolocation.fetchedLocation) {
       navigator.geolocation.getCurrentPosition(
@@ -49,23 +84,23 @@ const fetchTime = () => {
           navigator.geolocation.fetchedLocation = true; // Set the flag to true
         },
         (error) => {
-          console.error('Error getting location:', error.message);
+          console.error("Error getting location:", error.message);
         }
       );
     }
-  
+
     // Start the timer
     const newTimerId = setInterval(() => {
       setTimer((prevTimer) => {
         // Save timer value to local storage
-        localStorage.setItem('timerValue', String(prevTimer + 1));
+        localStorage.setItem("timerValue", String(prevTimer + 1));
         return prevTimer + 1;
       });
     }, 1000);
-  
+
     setTimerId(newTimerId);
   };
-  
+
   const clockIn = () => {
     // Get the user's location only if not fetched already
     if (!navigator.geolocation.fetchedLocation) {
@@ -74,15 +109,15 @@ const fetchTime = () => {
           const { latitude, longitude } = position.coords;
           console.log(`User: ${username}, Location: ${latitude}, ${longitude}`);
           navigator.geolocation.fetchedLocation = false; // Set the flag to true
-          
+
           // Send the user's location to the backend
           saveUserLocation({ username, location: { latitude, longitude } });
-  
+
           // Use the correct timer value from state
           saveTimer(timer + 1, { latitude, longitude });
         },
         (error) => {
-          console.error('Error getting location:', error.message);
+          console.error("Error getting location:", error.message);
           // Use the correct timer value from state
           saveTimer(timer + 1);
         }
@@ -92,14 +127,18 @@ const fetchTime = () => {
       // Use the correct timer value from state
       saveTimer(timer + 1);
     }
+
+    if (ws) {
+      ws.send(JSON.stringify({ type: "clockIn", username }));
+    }
   };
 
   const saveUserLocation = (data) => {
     // Fetch to your backend API (replace with your actual backend URL)
-    fetch('https://tnapp.onrender.com/api/saveUserLocation', {
-      method: 'POST',
+    fetch("https://tnapp.onrender.com/api/saveUserLocation", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(data),
     })
@@ -108,7 +147,7 @@ const fetchTime = () => {
         console.log(data.message);
       })
       .catch((error) => {
-        console.error('Error saving user location:', error.message);
+        console.error("Error saving user location:", error.message);
       });
   };
 
@@ -118,8 +157,12 @@ const fetchTime = () => {
 
     // Stop the timer
     clearInterval(timerId);
+
+    if (ws) {
+      ws.send(JSON.stringify({ type: "clockOut", username }));
+    }
   };
-  
+
   const saveTimer = (timerValue, location) => {
     // Include location information in the request body if available
     const requestBody = {
@@ -127,12 +170,12 @@ const fetchTime = () => {
       workingTime: timerValue,
       location: location || null,
     };
-  
+
     // Fetch to your backend API (replace with your actual backend URL)
-    fetch('https://tnapp.onrender.com/api/saveWorkingTime', {
-      method: 'POST',
+    fetch("https://tnapp.onrender.com/api/saveWorkingTime", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(requestBody),
     })
@@ -141,10 +184,9 @@ const fetchTime = () => {
         console.log(data.message);
       })
       .catch((error) => {
-        console.error('Error saving working time:', error.message);
+        console.error("Error saving working time:", error.message);
       });
   };
-  
 
   const resetTimer = () => {
     // Stop the timer
@@ -154,7 +196,7 @@ const fetchTime = () => {
     setTimer(0);
 
     // Clear the saved timer value in local storage
-    localStorage.removeItem('timerValue');
+    localStorage.removeItem("timerValue");
   };
 
   return (
@@ -162,10 +204,10 @@ const fetchTime = () => {
       <header>
         <nav>
           <p>Welcome, {username}!</p>
-          <button onClick={() => navigate('/LogIn')}>Log Out</button>
+          <button onClick={() => navigate("/LogIn")}>Log Out</button>
         </nav>
       </header>
-      <main className='mains'>
+      <main className="mains">
         <h1>
           <p>Current Date: {currentDate}</p>
           <p>Current Time: {currentTime}</p>
@@ -175,11 +217,27 @@ const fetchTime = () => {
 
         <div className="time-container">
           <h3>{formatTime(timer)}</h3>
-
-          <button onClick={() => { startTimer(); clockIn(); }}>Clock In</button>
+          <button
+            onClick={() => {
+              startTimer();
+              clockIn();
+            }}
+          >
+            Clock In
+          </button>
           <button onClick={clockOut}>Clock Out</button>
-          <button style={{background: 'red'}} onClick={resetTimer}>Reset</button>
+          <button style={{ background: "red" }} onClick={resetTimer}>
+            Reset
+          </button>
         </div>
+
+        {currentLocation && (
+            <p>
+              Current Location: {currentLocation.latitude},{" "}
+              {currentLocation.longitude}
+            </p>
+          )}
+
       </main>
     </>
   );
@@ -191,7 +249,10 @@ const formatTime = (seconds) => {
   const minutes = Math.floor((seconds % 3600) / 60);
   const remainingSeconds = seconds % 60;
 
-  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
+    2,
+    "0"
+  )}:${String(remainingSeconds).padStart(2, "0")}`;
 };
 
 export default Workers;
