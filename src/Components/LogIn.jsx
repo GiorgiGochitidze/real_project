@@ -21,7 +21,7 @@ const LogIn = () => {
 
   try {
     const response = await axios.post(
-      "http://localhost:5000/api/login",
+      "https://tnapp.onrender.com/api/login",
       { username: username.toLowerCase(), password }
     );
 

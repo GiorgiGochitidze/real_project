@@ -6,9 +6,16 @@ import 'leaflet/dist/leaflet.css';
 const UserLocationsMap = () => {
   const [userLocations, setUserLocations] = useState(null);
 
-  useEffect(() => {
+  const customIcon = new L.Icon({
+    iconUrl: '/redDot.png',
+    iconSize: [32, 32],
+    iconAnchor: [16, 32],
+    popupAnchor: [0, -32],
+  });
+
+  const fetchUserLocations = () => {
     // Fetch user locations from the backend
-    fetch('http://localhost:5000/api/getUserLocations')
+    fetch('https://tnapp.onrender.com/api/getUserLocations')
       .then((response) => response.json())
       .then((data) => {
         console.log('Fetched user locations:', data);
@@ -17,8 +24,20 @@ const UserLocationsMap = () => {
       .catch((error) => {
         console.error('Error fetching user locations:', error.message);
       });
-  }, []);
-  
+  };
+
+  useEffect(() => {
+    // Initial fetch of user locations
+    fetchUserLocations();
+
+    // Set up interval to fetch updated user locations every 5 seconds
+    const intervalId = setInterval(fetchUserLocations, 5000);
+
+    // Cleanup the interval on component unmount
+    return () => clearInterval(intervalId);
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array ensures this effect runs only once
 
   if (!userLocations) {
     return <p>Loading user locations...</p>;
@@ -26,16 +45,9 @@ const UserLocationsMap = () => {
 
   console.log('Rendering user locations:', userLocations);
 
-  const customIcon = new L.Icon({
-    iconUrl: '/redDot.png',
-    iconSize: [32, 32],
-    iconAnchor: [16, 32],
-    popupAnchor: [0, -32],
-  });
-
   return (
     <MapContainer
-      center={[41.65110015869141, 41.63626861572266]} // Set a default center
+      center={[41.65110015869141, 41.63626861572266]}
       zoom={10}
       style={{ height: '600px', width: '100%' }}
     >
@@ -44,19 +56,25 @@ const UserLocationsMap = () => {
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       />
 
-      {Object.entries(userLocations).map(([username, location]) => (
-        <Marker
-          key={username}
-          icon={customIcon}
-          position={[location.latitude, location.longitude]}
-        >
-          <Popup>
-            {username}'s Location<br />
-            Latitude: {location.latitude}<br />
-            Longitude: {location.longitude}
-          </Popup>
-        </Marker>
-      ))}
+      {Object.entries(userLocations).map(([username, location]) => {
+        console.log(`Rendering location for ${username}:`, location);
+
+        return (
+          <Marker
+            key={username}
+            icon={customIcon}
+            position={[location.latitude, location.longitude]}
+          >
+            <Popup>
+              {username}'s Location
+              <br />
+              Latitude: {location.latitude}
+              <br />
+              Longitude: {location.longitude}
+            </Popup>
+          </Marker>
+        );
+      })}
     </MapContainer>
   );
 };
