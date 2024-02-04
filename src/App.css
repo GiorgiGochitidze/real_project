@@ -4,7 +4,7 @@
     font-family: 'Inder', sans-serif;
 }
 
-body{
+body, html{
     height: 100vh;
     overflow-x: hidden;
 }
