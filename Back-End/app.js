@@ -3,7 +3,7 @@ const http = require("http");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const fs = require("fs");
-const createWebSocketServer = require("./websocket-server");
+const createWebSocketServer = require("./websocket_server");
 
 const app = express();
 const server = http.createServer(app);
