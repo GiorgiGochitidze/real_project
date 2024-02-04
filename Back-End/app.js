@@ -60,11 +60,19 @@ app.post('/api/register', (req, res) => {
   res.json({ message: 'User registered successfully' });
 });
 
-// POST route for updating the timer
-// POST route for updating the timer
-// ... (existing code)
+// POST route for user login
+app.post('/api/login', (req, res) => {
+  const { username, password } = req.body;
 
-// POST route for updating the timer
+  const user = registeredUsers.find((user) => user.username === username && user.password === password);
+
+  if (user) {
+    res.json({ message: 'Login successful', user });
+  } else {
+    res.status(401).json({ message: 'Login failed. Incorrect username or password.' });
+  }
+});
+
 app.post('/api/updateTimer', (req, res) => {
   const { username, timer } = req.body;
 
@@ -132,23 +140,40 @@ app.post('/api/saveWorkingTime', (req, res) => {
   }
 });
 
-// ... (remaining code)
+// POST route for saving user location
+app.post('/api/saveUserLocation', (req, res) => {
+  const { username, location } = req.body;
 
+  try {
+    const filePath = 'user_locations.json';
 
+    // Load existing location data
+    let locationData = {};
+    try {
+      const locationDataString = fs.readFileSync(filePath, 'utf-8');
+      locationData = JSON.parse(locationDataString) || {};
+    } catch (error) {
+      if (error.code === 'ENOENT') {
+        // If the file doesn't exist, create an empty object
+        fs.writeFileSync(filePath, '{}', 'utf-8');
+      } else {
+        console.error('Error loading location data:', error.message);
+      }
+    }
 
+    // Save the user's location
+    locationData[username] = location;
 
-// POST route for user login
-app.post('/api/login', (req, res) => {
-  const { username, password } = req.body;
+    // Save updated location data to the file
+    fs.writeFileSync(filePath, JSON.stringify(locationData, null, 2), 'utf-8');
 
-  const user = registeredUsers.find((user) => user.username === username && user.password === password);
-
-  if (user) {
-    res.json({ message: 'Login successful', user });
-  } else {
-    res.status(401).json({ message: 'Login failed. Incorrect username or password.' });
+    res.json({ message: 'User location saved successfully' });
+  } catch (error) {
+    console.error(`Error saving user location for ${username}:`, error.message);
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
+
 
 // GET route for the root
 app.get('/', (req, res) => {

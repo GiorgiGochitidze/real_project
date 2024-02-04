@@ -74,6 +74,10 @@ const fetchTime = () => {
           const { latitude, longitude } = position.coords;
           console.log(`User: ${username}, Location: ${latitude}, ${longitude}`);
           navigator.geolocation.fetchedLocation = false; // Set the flag to true
+          
+          // Send the user's location to the backend
+          saveUserLocation({ username, location: { latitude, longitude } });
+  
           // Use the correct timer value from state
           saveTimer(timer + 1, { latitude, longitude });
         },
@@ -88,6 +92,24 @@ const fetchTime = () => {
       // Use the correct timer value from state
       saveTimer(timer + 1);
     }
+  };
+
+  const saveUserLocation = (data) => {
+    // Fetch to your backend API (replace with your actual backend URL)
+    fetch('http://localhost:5000/api/saveUserLocation', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        console.log(data.message);
+      })
+      .catch((error) => {
+        console.error('Error saving user location:', error.message);
+      });
   };
 
   const clockOut = () => {
@@ -107,7 +129,7 @@ const fetchTime = () => {
     };
   
     // Fetch to your backend API (replace with your actual backend URL)
-    fetch('https://tnapp.onrender.com/api/saveWorkingTime', {
+    fetch('http://localhost:5000/api/saveWorkingTime', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
