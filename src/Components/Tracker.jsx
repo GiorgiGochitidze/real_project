@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
-import 'leaflet/dist/images/marker-icon.png';
-import 'leaflet/dist/images/marker-shadow.png';
-
+import UserLocationsMap from './UserLocationsMap'; // Adjust the path
 
 const Tracker = () => {
   const [location, setLocation] = useState(null);
+  const [userLocations, setUserLocations] = useState(null);
 
   useEffect(() => {
     const getLocation = () => {
+      // Fetch the user's current location
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (position) => {
@@ -26,29 +24,26 @@ const Tracker = () => {
       }
     };
 
+    // Fetch all user locations
+    fetch('http://localhost:5000/api/getUserLocations')
+      .then((response) => response.json())
+      .then((data) => {
+        setUserLocations(data);
+      })
+      .catch((error) => {
+        console.error('Error fetching user locations:', error.message);
+      });
+
     getLocation();
   }, []);
 
   return (
     <div>
       {location ? (
-        <MapContainer
-          center={[location.latitude, location.longitude]}
-          zoom={15}
-          style={{ height: '400px', width: '100%' }}
-        >
-          <TileLayer
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          />
-          <Marker position={[location.latitude, location.longitude]}>
-            <Popup>
-              Your current location<br />
-              Latitude: {location.latitude}<br />
-              Longitude: {location.longitude}
-            </Popup>
-          </Marker>
-        </MapContainer>
+        <UserLocationsMap
+          userLocations={userLocations}
+          currentLocation={location}
+        />
       ) : (
         <p>Fetching location...</p>
       )}

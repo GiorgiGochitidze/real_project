@@ -136,6 +136,17 @@ app.post("/api/saveUserLocation", (req, res) => {
   }
 });
 
+app.get("/api/getUserLocations", (req, res) => {
+  try {
+    const filePath = "./user_locations.json";
+    const locationDataString = fs.readFileSync(filePath, "utf-8");
+    const userLocations = JSON.parse(locationDataString) || {};
+    res.json(userLocations);
+  } catch (error) {
+    console.error("Error fetching user locations:", error.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
 
 app.post("/api/updateTimer", (req, res) => {
   const { username, timer } = req.body;
