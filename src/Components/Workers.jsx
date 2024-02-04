@@ -16,7 +16,7 @@ const Workers = () => {
 
   useEffect(() => {
     // Establish WebSocket connection
-    const socket = new WebSocket('wss://tnapp.onrender.com/');
+    const socket = new WebSocket('wss://https://websocket-qyhb.onrender.com/');
     // Replace with your WebSocket server URL
 
     socket.onopen = () => {
