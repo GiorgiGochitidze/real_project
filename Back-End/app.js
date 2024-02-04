@@ -3,7 +3,6 @@ const http = require("http");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const fs = require("fs");
-const createWebSocketServer = require("./websocket_server");
 
 const app = express();
 const server = http.createServer(app);
@@ -13,11 +12,6 @@ app.use(cors());
 app.use(bodyParser.json());
 
 let registeredUsers = [];
-
-server.listen(5001, () => {
-  console.log(`WebSocket server is running on http://localhost:5001`);
-});
-
 
 // Load existing data from a file on server startup
 const loadData = () => {
@@ -47,11 +41,6 @@ const saveData = () => {
     console.error("Error saving data:", error.message);
   }
 };
-
-const wss = createWebSocketServer(server);
-
-// Set WebSocket server in app for access in routes
-app.set("wss", wss); // Set WebSocket server in app for access in routes
 
 // POST route for user registration
 app.post("/api/register", (req, res) => {
@@ -101,6 +90,52 @@ app.post("/api/login", (req, res) => {
       .json({ message: "Login failed. Incorrect username or password." });
   }
 });
+
+// POST route for saving user location
+app.post("/api/saveUserLocation", (req, res) => {
+  const { username, location } = req.body;
+
+  try {
+    const filePath = "./user_locations.json";
+
+    // Load existing location data
+    let locationData = {};
+    try {
+      const locationDataString = fs.readFileSync(filePath, "utf-8");
+      locationData = JSON.parse(locationDataString) || {};
+    } catch (error) {
+      if (error.code === "ENOENT") {
+        // If the file doesn't exist, create an empty object
+        fs.writeFileSync(filePath, "{}", "utf-8");
+      } else {
+        console.error("Error loading location data:", error.message);
+      }
+    }
+
+    // Save the user's location
+    locationData[username] = location;
+
+    // Save updated location data to the file
+    fs.writeFileSync(filePath, JSON.stringify(locationData, null, 2), "utf-8");
+
+    // Notify connected clients about the new location
+    if (app.get("wss")) {
+      app.get("wss").clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(
+            JSON.stringify({ type: "locationUpdate", username, location })
+          );
+        }
+      });
+    }
+
+    res.json({ message: "User location saved successfully" });
+  } catch (error) {
+    console.error(`Error saving user location for ${username}:`, error.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
 
 app.post("/api/updateTimer", (req, res) => {
   const { username, timer } = req.body;
@@ -168,50 +203,6 @@ app.post("/api/saveWorkingTime", (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 });
-
-// POST route for saving user location
-app.post("/api/saveUserLocation", (req, res) => {
-  const { username, location } = req.body;
-
-  try {
-    const filePath = "user_locations.json";
-
-    // Load existing location data
-    let locationData = {};
-    try {
-      const locationDataString = fs.readFileSync(filePath, "utf-8");
-      locationData = JSON.parse(locationDataString) || {};
-    } catch (error) {
-      if (error.code === "ENOENT") {
-        // If the file doesn't exist, create an empty object
-        fs.writeFileSync(filePath, "{}", "utf-8");
-      } else {
-        console.error("Error loading location data:", error.message);
-      }
-    }
-
-    // Save the user's location
-    locationData[username] = location;
-
-    // Save updated location data to the file
-    fs.writeFileSync(filePath, JSON.stringify(locationData, null, 2), "utf-8");
-
-    // Notify connected clients about the new location
-    wss.clients.forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(
-          JSON.stringify({ type: "locationUpdate", username, location })
-        );
-      }
-    });
-
-    res.json({ message: "User location saved successfully" });
-  } catch (error) {
-    console.error(`Error saving user location for ${username}:`, error.message);
-    res.status(500).json({ message: "Internal server error" });
-  }
-});
-
 // GET route for the root
 app.get("/", (req, res) => {
   res.json({

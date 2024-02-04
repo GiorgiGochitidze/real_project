@@ -9,43 +9,8 @@ const Workers = () => {
   const [currentTime, setCurrentTime] = useState(null);
   const [timer, setTimer] = useState(0);
   const [timerId, setTimerId] = useState(null);
-  const [ws, setWs] = useState(null); // WebSocket state
   const [currentLocation, setCurrentLocation] = useState(null);
-
-  // Fetch time function remains the same
-
-  useEffect(() => {
-    // Establish WebSocket connection
-    const socket = new WebSocket('wss://websocket-qyhb.onrender.com/');
-    // Replace with your WebSocket server URL
-
-    socket.onopen = () => {
-      console.log("WebSocket connection opened");
-      setWs(socket);
-    };
-
-    socket.onclose = () => {
-      console.log("WebSocket connection closed");
-    };
-
-    // Listen for WebSocket messages
-    socket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-
-      // Check the type of message (e.g., 'locationUpdate')
-      if (data.type === "locationUpdate") {
-        // Update the current location state
-        setCurrentLocation(data.location);
-      }
-    };
-
-    // Cleanup on component unmount
-    return () => {
-      if (ws) {
-        ws.close();
-      }
-    };
-  }, []); // Empty dependency array means this useEffect runs once on mount
+// Empty dependency array means this useEffect runs once on mount
 
   useEffect(() => {
     // Fetch time initially
@@ -109,11 +74,11 @@ const Workers = () => {
         (position) => {
           const { latitude, longitude } = position.coords;
           console.log(`User: ${username}, Location: ${latitude}, ${longitude}`);
-          navigator.geolocation.fetchedLocation = false; // Set the flag to true
-
+          navigator.geolocation.fetchedLocation = true; // Set the flag to true
+  
           // Send the user's location to the backend
           saveUserLocation({ username, location: { latitude, longitude } });
-
+  
           // Use the correct timer value from state
           saveTimer(timer + 1, { latitude, longitude });
         },
@@ -128,15 +93,12 @@ const Workers = () => {
       // Use the correct timer value from state
       saveTimer(timer + 1);
     }
-
-    if (ws) {
-      ws.send(JSON.stringify({ type: "clockIn", username }));
-    }
   };
+  
 
   const saveUserLocation = (data) => {
     // Fetch to your backend API (replace with your actual backend URL)
-    fetch("https://tnapp.onrender.com/api/saveUserLocation", {
+    fetch("http://localhost:5000/api/saveUserLocation", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -158,10 +120,6 @@ const Workers = () => {
 
     // Stop the timer
     clearInterval(timerId);
-
-    if (ws) {
-      ws.send(JSON.stringify({ type: "clockOut", username }));
-    }
   };
 
   const saveTimer = (timerValue, location) => {
@@ -173,7 +131,7 @@ const Workers = () => {
     };
 
     // Fetch to your backend API (replace with your actual backend URL)
-    fetch("https://tnapp.onrender.com/api/saveWorkingTime", {
+    fetch("http://localhost:5000/api/saveWorkingTime", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

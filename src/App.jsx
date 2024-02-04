@@ -6,6 +6,7 @@ import Registration from './Components/Registration';
 import LogIn from './Components/LogIn';
 import Manager from './Components/Manager';
 import Workers from './Components/Workers';
+import Tracker from './Components/Tracker';
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
         <Route path="/Register" element={<Registration />} />
         <Route path="/Login" element={<LogIn />} />
         <Route path="/Manager" element={<Manager />} />
+        <Route path="/Tracker" element={<Tracker />} />
 
         {/* Use dynamic route for /Workers/:username */}
         <Route path="/Workers/:username" element={<Workers />} />
