@@ -5,6 +5,7 @@ import 'leaflet/dist/leaflet.css';
 
 const UserLocationsMap = () => {
   const [userLocations, setUserLocations] = useState(null);
+  const [currentLocation, setCurrentLocation] = useState(null);
 
   const customIcon = new L.Icon({
     iconUrl: '/redDot.png',
@@ -26,12 +27,30 @@ const UserLocationsMap = () => {
       });
   };
 
+  const getCurrentLocation = () => {
+    // Fetch the user's current location
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setCurrentLocation({ latitude, longitude });
+        },
+        (error) => {
+          console.error('Error getting location:', error.message);
+        },
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+      );
+    } else {
+      console.error('Geolocation is not supported by this browser.');
+    }
+  };
+
   useEffect(() => {
     // Initial fetch of user locations
     fetchUserLocations();
 
-    // Set up interval to fetch updated user locations every 5 seconds
-    const intervalId = setInterval(fetchUserLocations, 5000);
+    // Fetch and update current location every 5 seconds
+    const intervalId = setInterval(getCurrentLocation, 5000);
 
     // Cleanup the interval on component unmount
     return () => clearInterval(intervalId);
@@ -39,7 +58,7 @@ const UserLocationsMap = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency array ensures this effect runs only once
 
-  if (!userLocations) {
+  if (!userLocations || !currentLocation) {
     return <p>Loading user locations...</p>;
   }
 
@@ -47,7 +66,7 @@ const UserLocationsMap = () => {
 
   return (
     <MapContainer
-      center={[41.65110015869141, 41.63626861572266]}
+      center={[currentLocation.latitude, currentLocation.longitude]}
       zoom={10}
       style={{ height: '600px', width: '100%' }}
     >
@@ -56,25 +75,35 @@ const UserLocationsMap = () => {
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       />
 
-      {Object.entries(userLocations).map(([username, location]) => {
-        console.log(`Rendering location for ${username}:`, location);
+      {Object.entries(userLocations).map(([username, location]) => (
+        <Marker
+          key={username}
+          icon={customIcon}
+          position={[location.latitude, location.longitude]}
+        >
+          <Popup>
+            {username}'s Location
+            <br />
+            Latitude: {location.latitude}
+            <br />
+            Longitude: {location.longitude}
+          </Popup>
+        </Marker>
+      ))}
 
-        return (
-          <Marker
-            key={username}
-            icon={customIcon}
-            position={[location.latitude, location.longitude]}
-          >
-            <Popup>
-              {username}'s Location
-              <br />
-              Latitude: {location.latitude}
-              <br />
-              Longitude: {location.longitude}
-            </Popup>
-          </Marker>
-        );
-      })}
+      {/* Marker for the current user's location */}
+      <Marker
+        icon={customIcon}
+        position={[currentLocation.latitude, currentLocation.longitude]}
+      >
+        <Popup>
+          Your Current Location
+          <br />
+          Latitude: {currentLocation.latitude}
+          <br />
+          Longitude: {currentLocation.longitude}
+        </Popup>
+      </Marker>
     </MapContainer>
   );
 };
