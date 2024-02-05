@@ -3,6 +3,8 @@ const http = require("http");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const fs = require("fs");
+const path = require("path");
+
 
 const app = express();
 const server = http.createServer(app);
@@ -130,7 +132,7 @@ app.post("/api/saveWorkingTime", (req, res) => {
   const { username, workingTime, location } = req.body;
 
   try {
-    const filePath = "all_users_data.json";
+    const filePath = path.join(__dirname, "all_users_data.json");
 
     // Load existing data
     let allUsersData = {};
@@ -159,6 +161,30 @@ app.post("/api/saveWorkingTime", (req, res) => {
   } catch (error) {
     console.error(`Error saving working time and location for ${username}:`, error.message);
     res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+app.get("/api/getAllUserLocations", (req, res) => {
+  try {
+    const filePath = path.join(__dirname, "./all_users_data.json");
+    const userData = fs.readFileSync(filePath, "utf-8");
+    const userLocations = JSON.parse(userData);
+
+    // console.log("userLocations:", userLocations);
+
+    // Convert the userLocations object into an array of users
+    const usersWithLocations = Object.entries(userLocations).map(([username, data]) => ({
+      username,
+      location: data.location,
+    }));
+
+    // Filter out users with null locations
+    const validUsersWithLocations = usersWithLocations.filter(user => user.location !== null);
+
+    res.json(validUsersWithLocations);
+  } catch (error) {
+    console.error('Error reading user locations from file:', error.message);
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 

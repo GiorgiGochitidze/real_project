@@ -1,7 +1,10 @@
 {
   "gigi": {
-    "workingTime": 37,
-    "location": null
+    "workingTime": 1,
+    "location": {
+      "latitude": 41.65110015869141,
+      "longitude": 41.63626861572266
+    }
   },
   "giorgi": {
     "workingTime": 9,
