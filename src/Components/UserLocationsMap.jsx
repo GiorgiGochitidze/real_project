@@ -5,6 +5,7 @@ import 'leaflet/dist/leaflet.css';
 
 const UserLocationsMap = () => {
   const [currentLocation, setCurrentLocation] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const customIcon = new L.Icon({
     iconUrl: '/redDot.png',
@@ -16,23 +17,7 @@ const UserLocationsMap = () => {
   const handlePositionChange = (position) => {
     const { latitude, longitude } = position.coords;
     setCurrentLocation({ latitude, longitude });
-  
-    // Send location data to the server
-    const username = "user123"; // Replace with the actual username or a unique identifier for the user
-    fetch("https://tnapp.onrender.com/api/updateLocation", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ username, location: { latitude, longitude } }),
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        console.log(data);
-      })
-      .catch((error) => {
-        console.error("Error updating location:", error.message);
-      });
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -41,6 +26,7 @@ const UserLocationsMap = () => {
       const watchId = navigator.geolocation.watchPosition(
         handlePositionChange,
         (error) => {
+          setLoading(false);
           console.error('Error getting location:', error.message);
         },
         { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
@@ -49,12 +35,17 @@ const UserLocationsMap = () => {
       // Clear the watch on component unmount
       return () => navigator.geolocation.clearWatch(watchId);
     } else {
+      setLoading(false);
       console.error('Geolocation is not supported by this browser.');
     }
   }, []);
 
-  if (!currentLocation) {
+  if (loading) {
     return <p>Loading current location...</p>;
+  }
+
+  if (!currentLocation) {
+    return <p>Unable to fetch the current location.</p>;
   }
 
   return (
