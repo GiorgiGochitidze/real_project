@@ -21,26 +21,26 @@ const UserLocationsMap = () => {
     setLoading(false);
   };
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch(
-          "https://tnapp.onrender.com/api/getAllUserLocations"
-        );
-        const data = await response.json();
+  const fetchAllUserLocations = async () => {
+    try {
+      const response = await fetch(
+        "https://tnapp.onrender.com/api/getAllUserLocations"
+      );
+      const data = await response.json();
 
-        // Ensure that data is an array
-        if (Array.isArray(data)) {
-          setUserLocations(data);
-        } else {
-          console.error("Invalid data format:", data);
-        }
-      } catch (error) {
-        console.error("Error fetching user locations:", error.message);
+      // Ensure that data is an array
+      if (Array.isArray(data)) {
+        setUserLocations(data);
+      } else {
+        console.error("Invalid data format:", data);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching user locations:", error.message);
+    }
+  };
 
-    fetchData();
+  useEffect(() => {
+    fetchAllUserLocations(); // Initial fetch
 
     if (navigator.geolocation) {
       const watchId = navigator.geolocation.watchPosition(
@@ -52,7 +52,13 @@ const UserLocationsMap = () => {
         { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
       );
 
-      return () => navigator.geolocation.clearWatch(watchId);
+      // Fetch all user locations every 10 seconds
+      const intervalId = setInterval(fetchAllUserLocations, 1000);
+
+      return () => {
+        navigator.geolocation.clearWatch(watchId);
+        clearInterval(intervalId);
+      };
     } else {
       setLoading(false);
       console.error("Geolocation is not supported by this browser.");
@@ -87,7 +93,6 @@ const UserLocationsMap = () => {
       />
   
       {/* Marker for the current user's location */}
-      {/* change currentlocation to false to disable show ur current location */}
       {currentLocation && ( 
         <Marker
           icon={customIcon}
