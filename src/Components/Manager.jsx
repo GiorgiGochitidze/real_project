@@ -100,7 +100,6 @@ const Manager = () => {
         )}
 
         <div className="map-container">
-          {/* Render UserLocationsMap component */}
           <UserLocationsMap
             currentLocation={currentLocation}
             userLocations={userLocations}
