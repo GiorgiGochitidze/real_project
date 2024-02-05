@@ -39,6 +39,14 @@ const UserLocationsMap = () => {
     }
   };
 
+  const handleLogout = () => {
+    // Handle logout event, e.g., by sending a signal to the server
+    // indicating that the user has logged out.
+    // This could be an API call or socket event depending on your backend.
+    // For demonstration purposes, we'll clear the current location.
+    setCurrentLocation(null);
+  };
+
   useEffect(() => {
     fetchAllUserLocations(); // Initial fetch
 
@@ -55,9 +63,12 @@ const UserLocationsMap = () => {
       // Fetch all user locations every 10 seconds
       const intervalId = setInterval(fetchAllUserLocations, 1000);
 
+      window.addEventListener("beforeunload", handleLogout);
+
       return () => {
         navigator.geolocation.clearWatch(watchId);
         clearInterval(intervalId);
+        window.removeEventListener("beforeunload", handleLogout);
       };
     } else {
       setLoading(false);
@@ -67,10 +78,6 @@ const UserLocationsMap = () => {
 
   if (loading) {
     return <p>Loading current location...</p>;
-  }
-
-  if (!currentLocation) {
-    return <p>Unable to fetch the current location.</p>;
   }
 
   // Filter out users with null or undefined locations or missing latitude/longitude
@@ -83,7 +90,7 @@ const UserLocationsMap = () => {
 
   return (
     <MapContainer
-      center={[currentLocation.latitude, currentLocation.longitude]}
+      center={[currentLocation?.latitude || 0, currentLocation?.longitude || 0]}
       zoom={10}
       style={{ height: "600px", width: "100%" }}
     >
