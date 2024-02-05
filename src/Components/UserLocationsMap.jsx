@@ -3,7 +3,11 @@ import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-const UserLocationsMap = () => {
+const UserLocationsMap = ({
+  currentLocation,
+  userLocations,
+  updateLocation,
+}) => {
   const [userLocations, setUserLocations] = useState([]);
   const [currentLocation, setCurrentLocation] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -21,7 +25,6 @@ const UserLocationsMap = () => {
     setCurrentLocation({ latitude, longitude });
     setLoading(false);
   };
-  
 
   const fetchAllUserLocations = async () => {
     try {
@@ -100,9 +103,9 @@ const UserLocationsMap = () => {
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       />
-  
+
       {/* Marker for the current user's location */}
-      {currentLocation && ( 
+      {currentLocation && (
         <Marker
           icon={customIcon}
           position={[currentLocation.latitude, currentLocation.longitude]}
@@ -116,7 +119,7 @@ const UserLocationsMap = () => {
           </Popup>
         </Marker>
       )}
-  
+
       {/* Markers for other users with non-null locations */}
       {usersWithLocations.map((user) => (
         <Marker

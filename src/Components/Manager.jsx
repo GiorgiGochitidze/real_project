@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../CSS/manager.css";
+import UserLocationsMap from "./UserLocationsMap";
 
 const countryLinks = {
   georgia:
@@ -17,16 +18,21 @@ const countryLinks = {
 
 const Manager = () => {
   const navigate = useNavigate();
-  const [showSublist, setShowSublist] = useState(false);
-  const [countries, setCountries] = useState(countryLinks.georgia);
-  const [showSubsublist, setShowSubsublist] = useState(false);
+  const [currentLocation, setCurrentLocation] = useState(null);
+  const [userLocations, setUserLocations] = useState([]); // Pass your user locations array here
   const [menu, setMenu] = useState(true);
+  const [showSublist, setShowSublist] = useState(true);
+  const [showSubsublist, setShowSubsublist] = useState(true);
 
   const handleLogout = () => {
     // Implement logout logic if needed
 
     // For demonstration purposes, let's navigate to the login page
     navigate("/LogIn");
+  };
+
+  const updateLocation = (latitude, longitude) => {
+    setCurrentLocation({ latitude, longitude });
   };
 
   const handleCountryClick = () => {
@@ -62,6 +68,7 @@ const Manager = () => {
                 <p
                   onClick={() => {
                     setCountries(countryLinks.germany);
+                    updateLocation(52.50149955540906, 13.317336276037128); // Update with desired coordinates
                     showSubsublist
                       ? setShowSubsublist(false)
                       : setShowSubsublist(true);
@@ -93,15 +100,12 @@ const Manager = () => {
         )}
 
         <div className="map-container">
-          <iframe
-            src={countries}
-            width="100%"
-            height="100%"
-            style={{ border: "0" }}
-            allowFullScreen={true}
-            loading="async"
-            referrerPolicy="no-referrer-when-downgrade"
-          ></iframe>
+          {/* Render UserLocationsMap component */}
+          <UserLocationsMap
+            currentLocation={currentLocation}
+            userLocations={userLocations}
+            updateLocation={updateLocation}
+          />
         </div>
       </main>
     </>
