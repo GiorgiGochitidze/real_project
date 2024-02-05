@@ -7,7 +7,6 @@ const UserLocationsMap = () => {
   const [userLocations, setUserLocations] = useState([]);
   const [currentLocation, setCurrentLocation] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [rerenderMap, setRerenderMap] = useState(false); // State variable for re-rendering map
 
   const customIcon = new L.Icon({
     iconUrl: "/redDot.png",
@@ -32,7 +31,6 @@ const UserLocationsMap = () => {
       // Ensure that data is an array
       if (Array.isArray(data)) {
         setUserLocations(data);
-        setRerenderMap((prev) => !prev); // Trigger re-render
       } else {
         console.error("Invalid data format:", data);
       }
@@ -55,7 +53,7 @@ const UserLocationsMap = () => {
       );
 
       // Fetch all user locations every 10 seconds
-      const intervalId = setInterval(fetchAllUserLocations, 10000);
+      const intervalId = setInterval(fetchAllUserLocations, 1000);
 
       return () => {
         navigator.geolocation.clearWatch(watchId);
@@ -65,7 +63,7 @@ const UserLocationsMap = () => {
       setLoading(false);
       console.error("Geolocation is not supported by this browser.");
     }
-  }, [rerenderMap]); // Add rerenderMap to the dependencies array
+  }, []);
 
   if (loading) {
     return <p>Loading current location...</p>;
@@ -88,7 +86,6 @@ const UserLocationsMap = () => {
       center={[currentLocation.latitude, currentLocation.longitude]}
       zoom={10}
       style={{ height: "600px", width: "100%" }}
-      key={rerenderMap} // Set the key to trigger re-render on key change
     >
       <TileLayer
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
