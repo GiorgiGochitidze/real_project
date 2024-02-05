@@ -5,7 +5,6 @@ import "leaflet/dist/leaflet.css";
 
 const UserLocationsMap = ({
   currentLocation,
-  userLocations,
   updateLocation,
 }) => {
   const [loading, setLoading] = useState(true);
