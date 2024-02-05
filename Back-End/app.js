@@ -91,6 +91,41 @@ app.post("/api/login", (req, res) => {
   }
 });
 
+// POST route for updating user location
+app.post("/api/updateLocation", (req, res) => {
+  const { username, location } = req.body;
+
+  try {
+    const filePath = "all_users_location.json";
+
+    // Load existing location data
+    let locationData = {};
+    try {
+      const locationDataString = fs.readFileSync(filePath, "utf-8");
+      locationData = JSON.parse(locationDataString) || {};
+    } catch (error) {
+      if (error.code === "ENOENT") {
+        // If the file doesn't exist, create an empty object
+        fs.writeFileSync(filePath, "{}", "utf-8");
+      } else {
+        console.error("Error loading location data:", error.message);
+      }
+    }
+
+    // Update the location for the user
+    locationData[username] = location;
+
+    // Save updated location data to the file
+    fs.writeFileSync(filePath, JSON.stringify(locationData, null, 2), "utf-8");
+
+    res.json({ message: "Location updated successfully" });
+  } catch (error) {
+    console.error(`Error updating location for ${username}:`, error.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+
 
 app.post("/api/updateTimer", (req, res) => {
   const { username, timer } = req.body;

@@ -16,7 +16,23 @@ const UserLocationsMap = () => {
   const handlePositionChange = (position) => {
     const { latitude, longitude } = position.coords;
     setCurrentLocation({ latitude, longitude });
-    console.log('Current Location:', { latitude, longitude });
+  
+    // Send location data to the server
+    const username = "user123"; // Replace with the actual username or a unique identifier for the user
+    fetch("https://tnapp.onrender.com/api/updateLocation", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ username, location: { latitude, longitude } }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        console.log(data);
+      })
+      .catch((error) => {
+        console.error("Error updating location:", error.message);
+      });
   };
 
   useEffect(() => {
