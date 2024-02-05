@@ -95,9 +95,13 @@ const UserLocationsMap = ({
 
   return (
     <MapContainer
-      center={[currentLocation?.latitude || 0, currentLocation?.longitude || 0]}
-      zoom={10}
-      style={{ height: "600px", width: "100%" }}
+    center={
+      focusedUser
+        ? [focusedUser.location.latitude, focusedUser.location.longitude]
+        : [currentLocation?.latitude || 0, currentLocation?.longitude || 0]
+    }
+    zoom={10}
+    style={{ height: "600px", width: "100%" }}
     >
       <TileLayer
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
