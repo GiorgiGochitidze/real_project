@@ -16,10 +16,12 @@ const UserLocationsMap = () => {
   });
 
   const handlePositionChange = (position) => {
+    console.log("New position:", position.coords);
     const { latitude, longitude } = position.coords;
     setCurrentLocation({ latitude, longitude });
     setLoading(false);
   };
+  
 
   const fetchAllUserLocations = async () => {
     try {
