@@ -39,7 +39,7 @@ const UserLocationsMap = () => {
     // Set up an interval to fetch and update the location every 3 seconds
     const intervalId = setInterval(() => {
       getCurrentLocation();
-    }, 3000);
+    }, 1500);
 
     // Clear the interval on component unmount
     return () => clearInterval(intervalId);
