@@ -9,7 +9,6 @@ const Workers = () => {
   const [currentTime, setCurrentTime] = useState(null);
   const [timer, setTimer] = useState(0);
   const [timerId, setTimerId] = useState(null);
-  const [currentLocation, setCurrentLocation] = useState(null);
 
   useEffect(() => {
     fetchTime();
@@ -31,40 +30,51 @@ const Workers = () => {
   const startTimer = () => {
     clearInterval(timerId);
   
-    if (!navigator.geolocation.fetchedLocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          navigator.geolocation.fetchedLocation = true;
-          clockIn({ latitude, longitude });
-        },
-        (error) => {
-          console.error("Error getting location:", error.message);
-          clockIn(); // Continue with clockIn even if location fetching fails
-        }
-      );
-    } else {
-      clockIn();
-    }
-  
-    const newTimerId = setInterval(() => {
-      setTimer((prevTimer) => {
-        sessionStorage.setItem("timerValue", String(prevTimer + 1)); // Change localStorage to sessionStorage
-        return prevTimer + 1;
+    const getLocation = () => {
+      return new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            navigator.geolocation.fetchedLocation = true;
+            resolve({ latitude, longitude });
+          },
+          (error) => {
+            console.error("Error getting location:", error.message);
+            resolve(null); // Resolve with null if location fetching fails
+          }
+        );
       });
-    }, 1000);
+    };
   
-    setTimerId(newTimerId);
+    getLocation().then((location) => {
+      clockIn(location);
+  
+      const newTimerId = setInterval(() => {
+        setTimer((prevTimer) => {
+          sessionStorage.setItem("timerValue", String(prevTimer + 1));
+          return prevTimer + 1;
+        });
+      }, 1000);
+  
+      setTimerId(newTimerId);
+    });
   };
-
+  
   const clockIn = (location) => {
+    const newTimerValue = timer + 1;
+  
     if (location) {
-      saveUserLocation({ username, location });
-      saveTimer(timer + 1, location);
+      saveUserLocation({ username, workingTime: newTimerValue, location });
+      saveTimer(newTimerValue, location);
+    
+      // Console log the user location
+      console.log(`${username}:`, location);
     } else {
-      saveTimer(timer + 1);
+      saveTimer(newTimerValue);
     }
   };
+  
+  
 
   const saveUserLocation = (data) => {
     fetch("http://localhost:5000/api/saveWorkingTime", {
@@ -82,6 +92,7 @@ const Workers = () => {
         console.error("Error saving user location:", error.message);
       });
   };
+  
 
   const clockOut = () => {
     saveTimer(timer);

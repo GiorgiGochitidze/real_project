@@ -125,39 +125,43 @@ app.post("/api/updateTimer", (req, res) => {
 });
 
 // POST route for saving working time
-// POST route for saving working time
+// POST route for saving working time and location
 app.post("/api/saveWorkingTime", (req, res) => {
   const { username, workingTime, location } = req.body;
 
   try {
-    const filePath = "all_users_timer.json";
+    const filePath = "all_users_data.json";
 
-    // Load existing timer data
-    let timerData = {};
+    // Load existing data
+    let allUsersData = {};
     try {
-      const timerDataString = fs.readFileSync(filePath, "utf-8");
-      timerData = JSON.parse(timerDataString) || {};
+      const allUsersDataString = fs.readFileSync(filePath, "utf-8");
+      allUsersData = JSON.parse(allUsersDataString) || {};
     } catch (error) {
       if (error.code === "ENOENT") {
         // If the file doesn't exist, create an empty object
         fs.writeFileSync(filePath, "{}", "utf-8");
       } else {
-        console.error("Error loading timer data:", error.message);
+        console.error("Error loading data:", error.message);
       }
     }
 
-    // Update the timer value for the user
-    timerData[username] = workingTime;
+    // Update the working time and location for the user
+    allUsersData[username] = {
+      workingTime,
+      location,
+    };
 
-    // Save updated timer data to the file
-    fs.writeFileSync(filePath, JSON.stringify(timerData, null, 2), "utf-8");
+    // Save updated data to the file
+    fs.writeFileSync(filePath, JSON.stringify(allUsersData, null, 2), "utf-8");
 
-    res.json({ message: "Working time saved successfully" });
+    res.json({ message: "Working time and location saved successfully" });
   } catch (error) {
-    console.error(`Error saving working time for ${username}:`, error.message);
+    console.error(`Error saving working time and location for ${username}:`, error.message);
     res.status(500).json({ message: "Internal server error" });
   }
 });
+
 
 // GET route for the root
 app.get("/", (req, res) => {
