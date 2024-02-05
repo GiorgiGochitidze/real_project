@@ -8,23 +8,25 @@ const UserLocationsMap = ({
   userLocations,
   updateLocation,
 }) => {
-  const [userLocations, setUserLocations] = useState([]);
-  const [currentLocation, setCurrentLocation] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [focusedUser, setFocusedUser] = useState(null);
+  const [userLocationsState, setUserLocations] = useState([]);
+
 
   const customIcon = new L.Icon({
     iconUrl: "/redDot.png",
-    iconSize: [22, 22],
+    iconSize: [20, 20],
     iconAnchor: [16, 32],
     popupAnchor: [0, -32],
   });
-
   const handlePositionChange = (position) => {
     console.log("New position:", position.coords);
     const { latitude, longitude } = position.coords;
-    setCurrentLocation({ latitude, longitude });
+    updateLocation(latitude, longitude);
+    setFocusedUser({ location: { latitude, longitude } });
     setLoading(false);
   };
+  
 
   const fetchAllUserLocations = async () => {
     try {
@@ -86,12 +88,13 @@ const UserLocationsMap = ({
   }
 
   // Filter out users with null or undefined locations or missing latitude/longitude
-  const usersWithLocations = userLocations.filter(
+  const usersWithLocations = userLocationsState.filter(
     (user) =>
       user.location &&
       user.location.latitude !== undefined &&
       user.location.longitude !== undefined
   );
+  
 
   return (
     <MapContainer
@@ -100,6 +103,7 @@ const UserLocationsMap = ({
         ? [focusedUser.location.latitude, focusedUser.location.longitude]
         : [currentLocation?.latitude || 0, currentLocation?.longitude || 0]
     }
+    
     zoom={10}
     style={{ height: "600px", width: "100%" }}
     >

@@ -19,15 +19,13 @@ const countryLinks = {
 const Manager = () => {
   const navigate = useNavigate();
   const [currentLocation, setCurrentLocation] = useState(null);
-  const [userLocations, setUserLocations] = useState([]); // Pass your user locations array here
+  const [userLocations, setUserLocations] = useState([]);
+  const [focusedUser, setFocusedUser] = useState(null);
   const [menu, setMenu] = useState(true);
   const [showSublist, setShowSublist] = useState(true);
   const [showSubsublist, setShowSubsublist] = useState(true);
 
   const handleLogout = () => {
-    // Implement logout logic if needed
-
-    // For demonstration purposes, let's navigate to the login page
     navigate("/LogIn");
   };
 
@@ -36,20 +34,18 @@ const Manager = () => {
   };
 
   const handleCountryClick = () => {
-    // Toggle the visibility of the sublist
     setShowSublist(!showSublist);
   };
 
   const handleObjectClick = () => {
-    // Toggle the visibility of the sublist
     setShowSubsublist(!showSubsublist);
   };
 
   return (
     <>
-      <header className=".header">
+      <header className="header">
         <nav>
-          <button onClick={() => (menu ? setMenu(false) : setMenu(true))}>
+          <button onClick={() => setMenu(!menu)}>
             MENU
           </button>
           <button onClick={handleLogout}>Log Out</button>
@@ -66,34 +62,31 @@ const Manager = () => {
               <div className="sublist">
                 <p>Georgia</p>
                 <p
-                  onClick={() => {
-                    setCountries(countryLinks.germany);
-                    updateLocation(52.50149955540906, 13.317336276037128); // Update with desired coordinates
-                    showSubsublist
-                      ? setShowSubsublist(false)
-                      : setShowSubsublist(true);
-                  }}
+                 onClick={() => {
+                  updateLocation(51.47407809096345, 10.608997907360573); // Update to Georgia coordinates
+                  setShowSubsublist(!showSubsublist);
+                }}
                 >
                   Germany
                 </p>
                 {showSubsublist && (
                   <div className="sublist">
                     <p
-                      onClick={() => setCountries(countryLinks.oregroup)}
+                      onClick={() => setUserLocations([countryLinks.oregroup])}
                       style={{ paddingLeft: "40px" }}
                     >
                       ORE GROUP
                     </p>
 
                     <p
-                      onClick={() => setCountries(countryLinks.office)}
+                      onClick={() => setUserLocations([countryLinks.office])}
                       style={{ paddingLeft: "40px" }}
                     >
                       Office N1
                     </p>
                   </div>
                 )}
-                <p onClick={() => setCountries(countryLinks.france)}>France</p>
+                <p onClick={() => setUserLocations([countryLinks.france])}>France</p>
               </div>
             )}
           </div>
@@ -103,6 +96,7 @@ const Manager = () => {
           <UserLocationsMap
             currentLocation={currentLocation}
             userLocations={userLocations}
+            focusedUser={focusedUser}
             updateLocation={updateLocation}
           />
         </div>
