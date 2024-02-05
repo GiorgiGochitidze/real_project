@@ -91,62 +91,6 @@ app.post("/api/login", (req, res) => {
   }
 });
 
-// POST route for saving user location
-app.post("/api/saveUserLocation", (req, res) => {
-  const { username, location } = req.body;
-
-  try {
-    const filePath = "./user_locations.json";
-
-    // Load existing location data
-    let locationData = {};
-    try {
-      const locationDataString = fs.readFileSync(filePath, "utf-8");
-      locationData = JSON.parse(locationDataString) || {};
-    } catch (error) {
-      if (error.code === "ENOENT") {
-        // If the file doesn't exist, create an empty object
-        fs.writeFileSync(filePath, "{}", "utf-8");
-      } else {
-        console.error("Error loading location data:", error.message);
-      }
-    }
-
-    // Save the user's location
-    locationData[username] = location;
-
-    // Save updated location data to the file
-    fs.writeFileSync(filePath, JSON.stringify(locationData, null, 2), "utf-8");
-
-    // Notify connected clients about the new location
-    if (app.get("wss")) {
-      app.get("wss").clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(
-            JSON.stringify({ type: "locationUpdate", username, location })
-          );
-        }
-      });
-    }
-
-    res.json({ message: "User location saved successfully" });
-  } catch (error) {
-    console.error(`Error saving user location for ${username}:`, error.message);
-    res.status(500).json({ message: "Internal server error" });
-  }
-});
-
-app.get("/api/getUserLocations", (req, res) => {
-  try {
-    const filePath = "./user_locations.json";
-    const locationDataString = fs.readFileSync(filePath, "utf-8");
-    const userLocations = JSON.parse(locationDataString) || {};
-    res.json(userLocations);
-  } catch (error) {
-    console.error("Error fetching user locations:", error.message);
-    res.status(500).json({ message: "Internal server error" });
-  }
-});
 
 app.post("/api/updateTimer", (req, res) => {
   const { username, timer } = req.body;

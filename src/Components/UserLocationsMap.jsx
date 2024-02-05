@@ -4,28 +4,14 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 const UserLocationsMap = () => {
-  const [userLocations, setUserLocations] = useState(null);
   const [currentLocation, setCurrentLocation] = useState(null);
 
   const customIcon = new L.Icon({
     iconUrl: '/redDot.png',
-    iconSize: [32, 32],
+    iconSize: [22, 22],
     iconAnchor: [16, 32],
     popupAnchor: [0, -32],
   });
-
-  const fetchUserLocations = () => {
-    // Fetch user locations from the backend
-    fetch('https://tnapp.onrender.com/api/getUserLocations')
-      .then((response) => response.json())
-      .then((data) => {
-        console.log('Fetched user locations:', data);
-        setUserLocations(data);
-      })
-      .catch((error) => {
-        console.error('Error fetching user locations:', error.message);
-      });
-  };
 
   const getCurrentLocation = () => {
     // Fetch the user's current location
@@ -34,6 +20,7 @@ const UserLocationsMap = () => {
         (position) => {
           const { latitude, longitude } = position.coords;
           setCurrentLocation({ latitude, longitude });
+          console.log('Current Location:', { latitude, longitude });
         },
         (error) => {
           console.error('Error getting location:', error.message);
@@ -46,23 +33,21 @@ const UserLocationsMap = () => {
   };
 
   useEffect(() => {
-    // Initial fetch of user locations
-    fetchUserLocations();
+    // Fetch and update current location initially
+    getCurrentLocation();
 
-    // Fetch and update current location every 5 seconds
-    const intervalId = setInterval(getCurrentLocation, 5000);
+    // Set up an interval to fetch and update the location every 3 seconds
+    const intervalId = setInterval(() => {
+      getCurrentLocation();
+    }, 3000);
 
-    // Cleanup the interval on component unmount
+    // Clear the interval on component unmount
     return () => clearInterval(intervalId);
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency array ensures this effect runs only once
 
-  if (!userLocations || !currentLocation) {
-    return <p>Loading user locations...</p>;
+  if (!currentLocation) {
+    return <p>Loading current location...</p>;
   }
-
-  console.log('Rendering user locations:', userLocations);
 
   return (
     <MapContainer
@@ -74,22 +59,6 @@ const UserLocationsMap = () => {
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       />
-
-      {Object.entries(userLocations).map(([username, location]) => (
-        <Marker
-          key={username}
-          icon={customIcon}
-          position={[location.latitude, location.longitude]}
-        >
-          <Popup>
-            {username}'s Location
-            <br />
-            Latitude: {location.latitude}
-            <br />
-            Longitude: {location.longitude}
-          </Popup>
-        </Marker>
-      ))}
 
       {/* Marker for the current user's location */}
       <Marker
