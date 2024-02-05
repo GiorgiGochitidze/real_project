@@ -57,7 +57,7 @@ const UserLocationsMap = () => {
           setLoading(false);
           console.error("Error getting location:", error.message);
         },
-        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+        { enableHighAccuracy: true, timeout: 1000, maximumAge: 0 }
       );
 
       // Fetch all user locations every 10 seconds
