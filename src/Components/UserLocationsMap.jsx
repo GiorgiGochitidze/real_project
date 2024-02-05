@@ -7,7 +7,6 @@ const UserLocationsMap = () => {
   const [userLocations, setUserLocations] = useState([]);
   const [currentLocation, setCurrentLocation] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [rerenderMap, setRerenderMap] = useState(false); // State variable for re-rendering map
 
   const customIcon = new L.Icon({
     iconUrl: "/redDot.png",
@@ -16,34 +15,32 @@ const UserLocationsMap = () => {
     popupAnchor: [0, -32],
   });
 
-  const fetchData = async () => {
-    try {
-      const response = await fetch(
-        "https://tnapp.onrender.com/api/getAllUserLocations"
-      );
-      const data = await response.json();
-
-      // Ensure that data is an array
-      if (Array.isArray(data)) {
-        setUserLocations(data);
-        setRerenderMap((prev) => !prev); // Trigger re-render
-      } else {
-        console.error("Invalid data format:", data);
-      }
-    } catch (error) {
-      console.error("Error fetching user locations:", error.message);
-    }
-  };
-
   const handlePositionChange = (position) => {
     const { latitude, longitude } = position.coords;
     setCurrentLocation({ latitude, longitude });
     setLoading(false);
-    fetchData(); // Fetch data when the user's location changes
   };
 
   useEffect(() => {
-    fetchData(); // Initial fetch
+    const fetchData = async () => {
+      try {
+        const response = await fetch(
+          "https://tnapp.onrender.com/api/getAllUserLocations"
+        );
+        const data = await response.json();
+
+        // Ensure that data is an array
+        if (Array.isArray(data)) {
+          setUserLocations(data);
+        } else {
+          console.error("Invalid data format:", data);
+        }
+      } catch (error) {
+        console.error("Error fetching user locations:", error.message);
+      }
+    };
+
+    fetchData();
 
     if (navigator.geolocation) {
       const watchId = navigator.geolocation.watchPosition(
@@ -55,9 +52,7 @@ const UserLocationsMap = () => {
         { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
       );
 
-      return () => {
-        navigator.geolocation.clearWatch(watchId);
-      };
+      return () => navigator.geolocation.clearWatch(watchId);
     } else {
       setLoading(false);
       console.error("Geolocation is not supported by this browser.");
@@ -85,7 +80,6 @@ const UserLocationsMap = () => {
       center={[currentLocation.latitude, currentLocation.longitude]}
       zoom={10}
       style={{ height: "600px", width: "100%" }}
-      key={rerenderMap} // Set the key to trigger re-render on key change
     >
       <TileLayer
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -93,6 +87,7 @@ const UserLocationsMap = () => {
       />
   
       {/* Marker for the current user's location */}
+      {/* change currentlocation to false to disable show ur current location */}
       {currentLocation && ( 
         <Marker
           icon={customIcon}
