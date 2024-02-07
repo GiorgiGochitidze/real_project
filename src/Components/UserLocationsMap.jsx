@@ -30,7 +30,7 @@ const UserLocationsMap = ({
   const fetchAllUserLocations = async () => {
     try {
       const response = await fetch(
-        "https://tnapp.onrender.com/api/getAllUserLocations"
+        "http://localhost:5000/api/getAllUserLocations"
       );
       const data = await response.json();
 

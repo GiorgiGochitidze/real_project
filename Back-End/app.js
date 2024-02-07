@@ -126,8 +126,8 @@ app.post("/api/updateTimer", (req, res) => {
   }
 });
 
-// POST route for saving working time
-// POST route for saving working time and location
+
+// POST route for saving working time with location
 app.post("/api/saveWorkingTime", (req, res) => {
   const { username, workingTime, location } = req.body;
 
@@ -149,10 +149,7 @@ app.post("/api/saveWorkingTime", (req, res) => {
     }
 
     // Update the working time and location for the user
-    allUsersData[username] = {
-      workingTime,
-      location,
-    };
+    allUsersData[username] = { workingTime, location };
 
     // Save updated data to the file
     fs.writeFileSync(filePath, JSON.stringify(allUsersData, null, 2), "utf-8");
@@ -163,6 +160,8 @@ app.post("/api/saveWorkingTime", (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 });
+
+
 
 app.get("/api/getAllUserLocations", (req, res) => {
   try {

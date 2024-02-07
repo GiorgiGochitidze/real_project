@@ -7,14 +7,14 @@ const Workers = () => {
   const navigate = useNavigate();
   const [currentDate, setCurrentDate] = useState(null);
   const [currentTime, setCurrentTime] = useState(null);
-  const [timer, setTimer] = useState(0);
-  const [timerId, setTimerId] = useState(null);
+  const [clockInTime, setClockInTime] = useState(null);
+  const [clockOutTime, setClockOutTime] = useState(null);
+  const [workingTime, setWorkingTime] = useState(null);
+  const [timerStarted, setTimerStarted] = useState(false); // Track if timer has started
+  const [location, setLocation] = useState(null); // State to hold the location
 
   useEffect(() => {
     fetchTime();
-
-    const savedTimerValue = parseInt(localStorage.getItem("timerValue"), 10) || 0;
-    setTimer(savedTimerValue);
 
     const intervalId = setInterval(fetchTime, 1000);
 
@@ -27,57 +27,67 @@ const Workers = () => {
     setCurrentTime(currentDateObj.toLocaleTimeString());
   };
 
-  const startTimer = () => {
-    clearInterval(timerId);
-  
-    const getLocation = () => {
-      return new Promise((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const { latitude, longitude } = position.coords;
-            navigator.geolocation.fetchedLocation = true;
-            resolve({ latitude, longitude });
-          },
-          (error) => {
-            console.error("Error getting location:", error.message);
-            resolve(null); // Resolve with null if location fetching fails
-          }
-        );
-      });
-    };
-  
-    getLocation().then((location) => {
-      clockIn(location);
-  
-      const newTimerId = setInterval(() => {
-        setTimer((prevTimer) => {
-          sessionStorage.setItem("timerValue", String(prevTimer + 1));
-          return prevTimer + 1;
-        });
-      }, 1000);
-  
-      setTimerId(newTimerId);
-    });
-  };
-  
-  const clockIn = (location) => {
-    const newTimerValue = timer + 1;
-  
-    if (location) {
-      saveUserLocation({ username, workingTime: newTimerValue, location });
-      saveTimer(newTimerValue, location);
-    
-      // Console log the user location
-      console.log(`${username}:`, location);
+
+  const clockIn = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const currentDateTime = new Date();
+          const loc = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          };
+          setClockInTime(currentDateTime);
+          setLocation(loc); // Set the location
+          setTimerStarted(true); // Set timer started flag to true
+          saveWorkingTime({ username, workingTime: null, location: loc }); // Save working time and location
+        },
+        (error) => {
+          console.error("Error getting location:", error.message);
+          // If location access is denied or not available, proceed without location
+          const currentDateTime = new Date();
+          setClockInTime(currentDateTime);
+          setLocation(null); // Set location to null
+          setTimerStarted(true); // Set timer started flag to true
+        }
+      );
     } else {
-      saveTimer(newTimerValue);
+      console.error("Geolocation is not supported by this browser.");
+      // Proceed without location
+      const currentDateTime = new Date();
+      setClockInTime(currentDateTime);
+      setLocation(null); // Set location to null
+      setTimerStarted(true); // Set timer started flag to true
     }
   };
   
   
+  
+  
+  const clockOut = () => {
+    const currentDateTime = new Date();
+    setClockOutTime(currentDateTime);
+    setLocation(null); // Set location to null
+  
+    // Calculate working time only if it's not already set
+    if (!workingTime && clockInTime) {
+      const diffMilliseconds = currentDateTime - clockInTime;
+      const seconds = Math.floor(diffMilliseconds / 1000);
+      setWorkingTime(seconds);
+      saveWorkingTime({ username, workingTime: seconds, location: null }); // Pass null as location when clocking out
+    }
+  };
+  
+  const resetTimer = () => {
+    setClockInTime(null);
+    setClockOutTime(null);
+    setWorkingTime(null);
+    setTimerStarted(false); // Reset timer started flag
+    setLocation(null); // Reset location to null
+  };
 
-  const saveUserLocation = (data) => {
-    fetch("https://tnapp.onrender.com/api/saveWorkingTime", {
+  const saveWorkingTime = (data) => {
+    fetch("http://localhost:5000/api/saveWorkingTime", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -89,45 +99,11 @@ const Workers = () => {
         console.log(data.message);
       })
       .catch((error) => {
-        console.error("Error saving user location:", error.message);
-      });
-  };
-  
-
-  const clockOut = () => {
-    saveTimer(timer);
-    clearInterval(timerId);
-  };
-
-  const saveTimer = (timerValue, location) => {
-    const requestBody = {
-      username,
-      workingTime: timerValue,
-      location: location || null,
-    };
-
-    fetch("https://tnapp.onrender.com/api/saveWorkingTime", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(requestBody),
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        console.log(data.message);
-      })
-      .catch((error) => {
         console.error("Error saving working time:", error.message);
       });
   };
-
-  const resetTimer = () => {
-    clearInterval(timerId);
-    setTimer(0);
-    sessionStorage.removeItem("timerValue"); // Change localStorage to sessionStorage
-  };
-
+  
+  
   return (
     <>
       <header>
@@ -145,18 +121,27 @@ const Workers = () => {
         <h2>Your Current Working Time:</h2>
 
         <div className="time-container">
-          <h3>{formatTime(timer)}</h3>
-          <button
-            onClick={() => {
-              startTimer();
-            }}
-          >
-            Clock In
-          </button>
-          <button onClick={clockOut}>Clock Out</button>
-          <button style={{ background: "red" }} onClick={resetTimer}>
-            Reset
-          </button>
+          <h3>
+            {workingTime !== null
+              ? `Worked for ${formatTime(workingTime)}`
+              : clockOutTime
+              ? `Worked from ${formatTime(clockInTime)} to ${formatTime(clockOutTime)}`
+              : timerStarted
+              ? "Timer started"
+              : "Not yet Started Work"}
+          </h3>
+        
+          {!clockOutTime && !timerStarted && (
+            <>
+              <button onClick={clockIn}>Clock In</button>
+            </>
+          )}
+          {!clockOutTime && timerStarted && (
+            <>
+              <button onClick={clockOut}>Clock Out</button>
+            </>
+          )}
+          {clockOutTime && <button onClick={resetTimer}>Reset</button>}
         </div>
       </main>
     </>
