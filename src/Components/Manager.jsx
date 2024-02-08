@@ -93,12 +93,7 @@ const Manager = () => {
         )}
 
         <div className="map-container">
-          <UserLocationsMap
-            currentLocation={currentLocation}
-            userLocations={userLocations}
-            focusedUser={focusedUser}
-            updateLocation={updateLocation} // Make sure updateLocation is passed here
-          />
+          <UserLocationsMap />
         </div>
       </main>
     </>

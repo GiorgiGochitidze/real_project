@@ -46,8 +46,9 @@ const Workers = () => {
           setClockInTime(currentDateTime);
           setLocation(loc); // Set the location
           setTimerStarted(true); // Set timer started flag to true
-          saveWorkingTime({ username, workingTime: null, location: loc }); // Save working time and location
-          addUserLocation({ username, location: loc }); // Add user location to the map
+
+          // Save working time and location to the backend
+          saveWorkingTime({ username, workingTime: null, location: loc });
         },
         (error) => {
           console.error("Error getting location:", error.message);

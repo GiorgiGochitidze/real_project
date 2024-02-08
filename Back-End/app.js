@@ -4,16 +4,60 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 const fs = require("fs");
 const path = require("path");
+const WebSocket = require('ws');
 
 
 const app = express();
 const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
 const PORT = 5000;
 
 app.use(cors());
 app.use(bodyParser.json());
 
+let allUsersData = {};
+
 let registeredUsers = [];
+
+function sendUserLocations() {
+  const userLocations = Object.values(allUsersData)
+    .filter(user =>
+      user.location && 
+      user.location.latitude !== null && 
+      user.location.longitude !== null && 
+      !isNaN(user.location.latitude) && 
+      !isNaN(user.location.longitude)
+    )
+    .map(user => ({ username: user.username, location: [user.location.latitude, user.location.longitude] }));
+
+  wss.clients.forEach(client => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify(userLocations));
+    }
+  });
+}
+
+wss.on('connection', (ws) => {
+  ws.on('message', (message) => {
+    console.log(`Received message from client: ${message}`);
+    sendUserLocations()
+  });
+
+  // Remove logging of disconnection events to reduce unnecessary logs
+  // ws.on('close', () => {
+  //   console.log('Client disconnected');
+  // });
+
+  // Alternatively, you can log disconnection events only when an error occurs
+  ws.on('error', (error) => {
+    console.error('WebSocket error:', error);
+    // Log disconnection event when an error occurs
+    console.log('Client disconnected due to error:', error.message);
+  });
+
+  // You can still keep any other necessary logic within the connection event handler
+});
+
 
 // Load existing data from a file on server startup
 const loadData = () => {
@@ -132,27 +176,11 @@ app.post("/api/saveWorkingTime", (req, res) => {
   const { username, workingTime, location } = req.body;
 
   try {
-    const filePath = path.join(__dirname, "all_users_data.json");
-
-    // Load existing data
-    let allUsersData = {};
-    try {
-      const allUsersDataString = fs.readFileSync(filePath, "utf-8");
-      allUsersData = JSON.parse(allUsersDataString) || {};
-    } catch (error) {
-      if (error.code === "ENOENT") {
-        // If the file doesn't exist, create an empty object
-        fs.writeFileSync(filePath, "{}", "utf-8");
-      } else {
-        console.error("Error loading data:", error.message);
-      }
-    }
-
     // Update the working time and location for the user
     allUsersData[username] = { workingTime, location };
 
-    // Save updated data to the file
-    fs.writeFileSync(filePath, JSON.stringify(allUsersData, null, 2), "utf-8");
+    // Send updated user data with available locations to all connected clients
+    sendUserLocations();
 
     res.json({ message: "Working time and location saved successfully" });
   } catch (error) {
@@ -161,31 +189,30 @@ app.post("/api/saveWorkingTime", (req, res) => {
   }
 });
 
-
-
-app.get("/api/getAllUserLocations", (req, res) => {
+app.get("/api/getUserLocations", (req, res) => {
   try {
     const filePath = path.join(__dirname, "./all_users_data.json");
-    const userData = fs.readFileSync(filePath, "utf-8");
-    const userLocations = JSON.parse(userData);
+    const allUsersDataString = fs.readFileSync(filePath, "utf-8");
+    const allUsersData = JSON.parse(allUsersDataString) || {};
 
-    // console.log("userLocations:", userLocations);
-
-    // Convert the userLocations object into an array of users
-    const usersWithLocations = Object.entries(userLocations).map(([username, data]) => ({
-      username,
-      location: data.location,
-    }));
-
-    // Filter out users with null locations
-    const validUsersWithLocations = usersWithLocations.filter(user => user.location !== null);
-
-    res.json(validUsersWithLocations);
+    const userLocations = Object.values(allUsersData)
+      .filter(user => 
+        user.location && 
+        user.location.latitude !== null && 
+        user.location.longitude !== null && 
+        !isNaN(user.location.latitude) && 
+        !isNaN(user.location.longitude)
+      )
+      .map(user => ({ username: user.username, location: [user.location.latitude, user.location.longitude] }));
+      
+    res.json(userLocations);
   } catch (error) {
-    console.error('Error reading user locations from file:', error.message);
+    console.error('Error fetching user locations:', error.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
+
+
 
 
 // GET route for the root
@@ -199,6 +226,6 @@ app.get("/", (req, res) => {
 // Load existing data from files on server startup
 loadData();
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
