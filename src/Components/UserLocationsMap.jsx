@@ -1,149 +1,135 @@
 import React, { useEffect, useState } from "react";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import mapboxgl from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
+import customMarkerIcon from "/redDot.png"; // Import your custom marker icon
 
-const UserLocationsMap = ({
-  currentLocation,
-  updateLocation,
-}) => {
-  const [loading, setLoading] = useState(true);
-  const [focusedUser, setFocusedUser] = useState(null);
-  const [userLocationsState, setUserLocations] = useState([]);
+// Disable warning message about token
+mapboxgl.accessToken = "pk.eyJ1IjoidG9rc29uY2hpazIiLCJhIjoiY2xzZDcxeXVuMDY1MTJqbzQ4Mm9vNjIxMSJ9.WCJ7vbbX-sTE1JTFLe9wdg";
 
+const UserLocationsMap = ({ addUserLocation }) => {
+  const [map, setMap] = useState(null);
+  const [userLocations, setUserLocations] = useState([]);
 
-  const customIcon = new L.Icon({
-    iconUrl: "/redDot.png",
-    iconSize: [20, 20],
-    iconAnchor: [16, 32],
-    popupAnchor: [0, -32],
-  });
-  const handlePositionChange = (position) => {
-    console.log("New position:", position.coords);
-    const { latitude, longitude } = position.coords;
-    updateLocation(latitude, longitude);
-    setFocusedUser({ location: { latitude, longitude } });
-    setLoading(false);
-  };
-  
+  useEffect(() => {
+    const initializeMap = () => {
+      const mapInstance = new mapboxgl.Map({
+        container: "map-container",
+        style: "mapbox://styles/toksonchik2/clsd6hoso014401qq37gr613w",
+        center: [0, 0],
+        zoom: 1
+      });
 
-  const fetchAllUserLocations = async () => {
-    try {
-      const response = await fetch(
-        "https://tnapp.onrender.com/api/getAllUserLocations"
-      );
-      const data = await response.json();
+      mapInstance.on("load", () => {
+        setMap(mapInstance);
+      });
 
-      // Ensure that data is an array
-      if (Array.isArray(data)) {
-        setUserLocations(data);
-      } else {
-        console.error("Invalid data format:", data);
+      // Add click event listener to the map
+      mapInstance.on("click", "markers", (e) => {
+        const coordinates = e.features[0].geometry.coordinates.slice();
+        const username = e.features[0].properties.title;
+
+        // Ensure that if the map is zoomed out such that multiple copies of the feature are visible,
+        // the popup appears over the copy being pointed to.
+        while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+          coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+        }
+
+        new mapboxgl.Popup()
+          .setLngLat(coordinates)
+          .setHTML(`<p>${username}</p>`)
+          .addTo(mapInstance);
+      });
+
+      // Change the cursor to a pointer when the mouse is over the places layer.
+      mapInstance.on("mouseenter", "markers", () => {
+        mapInstance.getCanvas().style.cursor = "pointer";
+      });
+
+      // Change it back to a pointer when it leaves.
+      mapInstance.on("mouseleave", "markers", () => {
+        mapInstance.getCanvas().style.cursor = "";
+      });
+    };
+
+    initializeMap();
+
+    return () => {
+      if (map) {
+        map.remove();
       }
-    } catch (error) {
-      console.error("Error fetching user locations:", error.message);
-    }
-  };
+    };
+  }, []);
 
-  const handleLogout = () => {
-    // Handle logout event, e.g., by sending a signal to the server
-    // indicating that the user has logged out.
-    // This could be an API call or socket event depending on your backend.
-    // For demonstration purposes, we'll clear the current location.
-    setCurrentLocation(null);
+  useEffect(() => {
+    // Fetch user locations from the backend when the component mounts
+    fetchUserLocations();
+  }, []);
+
+  const fetchUserLocations = () => {
+    fetch("https://tnapp.onrender.com/api/getAllUserLocations")
+      .then((response) => response.json())
+      .then((data) => {
+        // Check if there are any new user locations
+        const newLocations = data.filter(newUser => !userLocations.find(existingUser => existingUser.id === newUser.id));
+        if (newLocations.length > 0) {
+          setUserLocations(data);
+        }
+      })
+      .catch((error) => {
+        console.error("Error fetching user locations:", error);
+      });
   };
 
   useEffect(() => {
-    fetchAllUserLocations(); // Initial fetch
+    if (map && userLocations && userLocations.length > 0) {
+      // Remove existing markers
+      map.getSource("markers")?.setData({
+        type: "FeatureCollection",
+        features: []
+      });
 
-    if (navigator.geolocation) {
-      const watchId = navigator.geolocation.watchPosition(
-        handlePositionChange,
-        (error) => {
-          setLoading(false);
-          console.error("Error getting location:", error.message);
+      // Add new markers
+      const markers = userLocations.map(user => ({
+        type: "Feature",
+        geometry: {
+          type: "Point",
+          coordinates: [user.location.longitude, user.location.latitude]
         },
-        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
-      );
+        properties: {
+          title: user.username
+        }
+      }));
 
-      // Fetch all user locations every 10 seconds
-      const intervalId = setInterval(fetchAllUserLocations, 1000);
+      map.addSource("markers", {
+        type: "geojson",
+        data: {
+          type: "FeatureCollection",
+          features: markers
+        }
+      });
 
-      window.addEventListener("beforeunload", handleLogout);
+      map.addLayer({
+        id: "markers",
+        type: "symbol",
+        source: "markers",
+        layout: {
+          "icon-image": "custom-marker", // Use the custom marker icon
+          "icon-size": 0.4,
+          "icon-anchor": "bottom", // Adjust anchor position if needed
+          "icon-allow-overlap": true // Allow markers to overlap if needed
+        }
+      });
 
-      return () => {
-        navigator.geolocation.clearWatch(watchId);
-        clearInterval(intervalId);
-        window.removeEventListener("beforeunload", handleLogout);
-      };
-    } else {
-      setLoading(false);
-      console.error("Geolocation is not supported by this browser.");
+      // Add the custom marker icon to the map
+      map.loadImage(customMarkerIcon, (error, image) => {
+        if (error) throw error;
+        map.addImage("custom-marker", image);
+      });
     }
-  }, []);
-
-  if (loading) {
-    return <p>Loading current location...</p>;
-  }
-
-  // Filter out users with null or undefined locations or missing latitude/longitude
-  const usersWithLocations = userLocationsState.filter(
-    (user) =>
-      user.location &&
-      user.location.latitude !== undefined &&
-      user.location.longitude !== undefined
-  );
-  
+  }, [map, userLocations]);
 
   return (
-    <MapContainer
-    center={
-      focusedUser
-        ? [focusedUser.location.latitude, focusedUser.location.longitude]
-        : [currentLocation?.latitude || 0, currentLocation?.longitude || 0]
-    }
-    
-    zoom={10}
-    style={{ height: "600px", width: "100%" }}
-    >
-      <TileLayer
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-      />
-
-      {/* Marker for the current user's location */}
-      {currentLocation && (
-        <Marker
-          icon={customIcon}
-          position={[currentLocation.latitude, currentLocation.longitude]}
-        >
-          <Popup>
-            Your Current Location
-            <br />
-            Latitude: {currentLocation.latitude}
-            <br />
-            Longitude: {currentLocation.longitude}
-          </Popup>
-        </Marker>
-      )}
-
-      {/* Markers for other users with non-null locations */}
-      {usersWithLocations.map((user) => (
-        <Marker
-          key={user.username}
-          icon={customIcon}
-          position={[user.location.latitude, user.location.longitude]}
-        >
-          <Popup>
-            {user.username}'s Location
-            <br />
-            Latitude: {user.location.latitude}
-            <br />
-            Longitude: {user.location.longitude}
-          </Popup>
-        </Marker>
-      ))}
-    </MapContainer>
+    <div id="map-container" style={{ height: "600px", width: "100%" }}></div>
   );
 };
 

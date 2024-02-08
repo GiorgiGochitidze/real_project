@@ -27,6 +27,12 @@ const Workers = () => {
     setCurrentTime(currentDateObj.toLocaleTimeString());
   };
 
+  const addUserLocation = (locationData) => {
+    // Your code to add user location to the map
+    // This function should interact with the UserLocationsMap component
+    // to add the user's location marker on the map
+    console.log("Adding user location to the map:", locationData);
+  };
 
   const clockIn = () => {
     if (navigator.geolocation) {
@@ -41,6 +47,7 @@ const Workers = () => {
           setLocation(loc); // Set the location
           setTimerStarted(true); // Set timer started flag to true
           saveWorkingTime({ username, workingTime: null, location: loc }); // Save working time and location
+          addUserLocation({ username, location: loc }); // Add user location to the map
         },
         (error) => {
           console.error("Error getting location:", error.message);
@@ -60,15 +67,12 @@ const Workers = () => {
       setTimerStarted(true); // Set timer started flag to true
     }
   };
-  
-  
-  
-  
+
   const clockOut = () => {
     const currentDateTime = new Date();
     setClockOutTime(currentDateTime);
     setLocation(null); // Set location to null
-  
+
     // Calculate working time only if it's not already set
     if (!workingTime && clockInTime) {
       const diffMilliseconds = currentDateTime - clockInTime;
@@ -77,7 +81,7 @@ const Workers = () => {
       saveWorkingTime({ username, workingTime: seconds, location: null }); // Pass null as location when clocking out
     }
   };
-  
+
   const resetTimer = () => {
     setClockInTime(null);
     setClockOutTime(null);
@@ -102,8 +106,7 @@ const Workers = () => {
         console.error("Error saving working time:", error.message);
       });
   };
-  
-  
+
   return (
     <>
       <header>
@@ -130,7 +133,7 @@ const Workers = () => {
               ? "Timer started"
               : "Not yet Started Work"}
           </h3>
-        
+
           {!clockOutTime && !timerStarted && (
             <>
               <button onClick={clockIn}>Clock In</button>

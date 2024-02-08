@@ -45,9 +45,7 @@ const Manager = () => {
     <>
       <header className="header">
         <nav>
-          <button onClick={() => setMenu(!menu)}>
-            MENU
-          </button>
+          <button onClick={() => setMenu(!menu)}>MENU</button>
           <button onClick={handleLogout}>Log Out</button>
         </nav>
       </header>
@@ -62,10 +60,10 @@ const Manager = () => {
               <div className="sublist">
                 <p>Georgia</p>
                 <p
-                 onClick={() => {
-                  updateLocation(51.47407809096345, 10.608997907360573); // Update to Georgia coordinates
-                  setShowSubsublist(!showSubsublist);
-                }}
+                  onClick={() => {
+                    updateLocation(); // Update to Georgia coordinates
+                    handleObjectClick();
+                  }}
                 >
                   Germany
                 </p>
@@ -86,7 +84,9 @@ const Manager = () => {
                     </p>
                   </div>
                 )}
-                <p onClick={() => setUserLocations([countryLinks.france])}>France</p>
+                <p onClick={() => setUserLocations([countryLinks.france])}>
+                  France
+                </p>
               </div>
             )}
           </div>
@@ -97,7 +97,7 @@ const Manager = () => {
             currentLocation={currentLocation}
             userLocations={userLocations}
             focusedUser={focusedUser}
-            updateLocation={updateLocation}
+            updateLocation={updateLocation} // Make sure updateLocation is passed here
           />
         </div>
       </main>
