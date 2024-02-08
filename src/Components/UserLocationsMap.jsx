@@ -35,7 +35,7 @@ const UserLocationsMap = () => {
 
   useEffect(() => {
     // WebSocket connection and marker update logic
-    const ws = new WebSocket('ws://https://tnapp.onrender.com/');
+    const ws = new WebSocket('wss://tnapp.onrender.com/');
 
     ws.onmessage = (event) => {
       const userData = JSON.parse(event.data);
