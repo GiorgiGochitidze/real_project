@@ -4,16 +4,24 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 const fs = require("fs");
 const path = require("path");
+const socketIo = require("socket.io");
 
 
 const app = express();
 const server = http.createServer(app);
+const io = socketIo(server);
 const PORT = 5000;
 
 app.use(cors());
 app.use(bodyParser.json());
 
 let registeredUsers = [];
+
+const emitLocationData = () => {
+  const allUsersData = loadAllUsersData();
+  io.emit("locationData", allUsersData);
+};
+
 
 // Load existing data from a file on server startup
 const loadData = () => {
@@ -121,21 +129,15 @@ app.post("/api/saveWorkingTime", (req, res) => {
     // Load existing data
     let allUsersData = loadAllUsersData();
 
-    // Check if the user already exists in the data
-    if (allUsersData.hasOwnProperty(username)) {
-      // If the user exists, update the working time and location for that user
-      allUsersData[username].workingTime = workingTime;
-      // Add clock-in location if available
-      if (clockInLocation) {
-        allUsersData[username].location = clockInLocation;
-      }
-    } else {
-      // If the user does not exist, create a new entry for the user
-      allUsersData[username] = { workingTime, location: clockInLocation };
-    }
-    
+    // Update the user's data with the clock-in location
+    allUsersData[username] = { 
+      workingTime, 
+      lngLat: clockInLocation.lngLat || {} // Set lngLat to an empty object if it doesn't exist
+    };
+
     // Save updated data to the file
     saveAllUsersData(allUsersData);
+
     res.json({ message: "Working time and location saved successfully" });
   } catch (error) {
     console.error(`Error saving working time for ${username}:`, error.message);
@@ -143,6 +145,26 @@ app.post("/api/saveWorkingTime", (req, res) => {
   }
 });
 
+
+
+
+io.on("connection", (socket) => {
+  console.log("Client connected");
+
+  // When a client connects, emit the initial location data
+  emitLocationData();
+
+  socket.on("disconnect", () => {
+    console.log("Client disconnected");
+  });
+});
+
+
+// GET route for fetching user locations
+app.get("/api/getUserLocations", (req, res) => {
+  const allUsersData = loadAllUsersData();
+  res.json(allUsersData);
+});
 
 
 // GET route for the root
