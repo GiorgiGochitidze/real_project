@@ -11,7 +11,6 @@ const Workers = () => {
   const [clockOutTime, setClockOutTime] = useState(null);
   const [workingTime, setWorkingTime] = useState(null);
   const [timerStarted, setTimerStarted] = useState(false); // Track if timer has started
-  const [location, setLocation] = useState(null); // State to hold the location
 
   useEffect(() => {
     fetchTime();
@@ -27,68 +26,36 @@ const Workers = () => {
     setCurrentTime(currentDateObj.toLocaleTimeString());
   };
 
-  const addUserLocation = (locationData) => {
-    // Your code to add user location to the map
-    // This function should interact with the UserLocationsMap component
-    // to add the user's location marker on the map
-    console.log("Adding user location to the map:", locationData);
-  };
-
   const clockIn = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const currentDateTime = new Date();
-          const loc = {
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude
-          };
-          setClockInTime(currentDateTime);
-          setLocation(loc); // Set the location
-          setTimerStarted(true); // Set timer started flag to true
-
-          // Save working time and location to the backend
-          saveWorkingTime({ username, workingTime: null, location: loc });
-        },
-        (error) => {
-          console.error("Error getting location:", error.message);
-          // If location access is denied or not available, proceed without location
-          const currentDateTime = new Date();
-          setClockInTime(currentDateTime);
-          setLocation(null); // Set location to null
-          setTimerStarted(true); // Set timer started flag to true
-        }
-      );
-    } else {
-      console.error("Geolocation is not supported by this browser.");
-      // Proceed without location
-      const currentDateTime = new Date();
-      setClockInTime(currentDateTime);
-      setLocation(null); // Set location to null
-      setTimerStarted(true); // Set timer started flag to true
-    }
+    const currentDateTime = new Date();
+    setClockInTime(currentDateTime);
+    setTimerStarted(true); // Set timer started flag
+    // Get user's current location when they clock in
+    getUserLocationAndSaveClockInLocation(currentDateTime);
   };
 
   const clockOut = () => {
     const currentDateTime = new Date();
     setClockOutTime(currentDateTime);
-    setLocation(null); // Set location to null
-
+  
     // Calculate working time only if it's not already set
     if (!workingTime && clockInTime) {
       const diffMilliseconds = currentDateTime - clockInTime;
       const seconds = Math.floor(diffMilliseconds / 1000);
       setWorkingTime(seconds);
-      saveWorkingTime({ username, workingTime: seconds, location: null }); // Pass null as location when clocking out
+      saveWorkingTime({ username, workingTime: seconds });
     }
+  
+    // Set user location to an empty object
+    saveWorkingTime({ username, workingTime: null, clockInLocation: {} });
   };
+  
 
   const resetTimer = () => {
     setClockInTime(null);
     setClockOutTime(null);
     setWorkingTime(null);
     setTimerStarted(false); // Reset timer started flag
-    setLocation(null); // Reset location to null
   };
 
   const saveWorkingTime = (data) => {
@@ -106,6 +73,24 @@ const Workers = () => {
       .catch((error) => {
         console.error("Error saving working time:", error.message);
       });
+  };
+
+  const getUserLocationAndSaveClockInLocation = (clockInDateTime) => {
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          const clockInLocation = { latitude, longitude };
+          // Save clock-in location along with the clock-in time
+          saveWorkingTime({ username, workingTime: null, clockInDateTime, clockInLocation });
+        },
+        (error) => {
+          console.error("Error getting user's location:", error.message);
+        }
+      );
+    } else {
+      console.error("Geolocation is not supported.");
+    }
   };
 
   return (
@@ -161,3 +146,4 @@ const formatTime = (seconds) => {
 };
 
 export default Workers;
+// 

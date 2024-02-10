@@ -4,60 +4,16 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 const fs = require("fs");
 const path = require("path");
-const WebSocket = require('ws');
 
 
 const app = express();
 const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
 const PORT = 5000;
 
 app.use(cors());
 app.use(bodyParser.json());
 
-let allUsersData = {};
-
 let registeredUsers = [];
-
-function sendUserLocations() {
-  const userLocations = Object.values(allUsersData)
-    .filter(user =>
-      user.location && 
-      user.location.latitude !== null && 
-      user.location.longitude !== null && 
-      !isNaN(user.location.latitude) && 
-      !isNaN(user.location.longitude)
-    )
-    .map(user => ({ username: user.username, location: [user.location.latitude, user.location.longitude] }));
-
-  wss.clients.forEach(client => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(JSON.stringify(userLocations));
-    }
-  });
-}
-
-wss.on('connection', (ws) => {
-  ws.on('message', (message) => {
-    console.log(`Received message from client: ${message}`);
-    sendUserLocations()
-  });
-
-  // Remove logging of disconnection events to reduce unnecessary logs
-  // ws.on('close', () => {
-  //   console.log('Client disconnected');
-  // });
-
-  // Alternatively, you can log disconnection events only when an error occurs
-  ws.on('error', (error) => {
-    console.error('WebSocket error:', error);
-    // Log disconnection event when an error occurs
-    console.log('Client disconnected due to error:', error.message);
-  });
-
-  // You can still keep any other necessary logic within the connection event handler
-});
-
 
 // Load existing data from a file on server startup
 const loadData = () => {
@@ -83,6 +39,26 @@ const saveData = () => {
       "utf-8"
     );
     console.log("Data saved successfully");
+  } catch (error) {
+    console.error("Error saving data:", error.message);
+  }
+};
+
+const loadAllUsersData = () => {
+  try {
+    const userData = fs.readFileSync("all_users_data.json", "utf-8");
+    return JSON.parse(userData) || {};
+  } catch (error) {
+    console.error("Error loading data:", error.message);
+    return {};
+  }
+};
+
+// Function to save data to all_users_data.json
+const saveAllUsersData = (data) => {
+  try {
+    fs.writeFileSync("all_users_data.json", JSON.stringify(data, null, 2), "utf-8");
+    console.log("All users data saved successfully");
   } catch (error) {
     console.error("Error saving data:", error.message);
   }
@@ -137,81 +113,35 @@ app.post("/api/login", (req, res) => {
   }
 });
 
-app.post("/api/updateTimer", (req, res) => {
-  const { username, timer } = req.body;
-
-  try {
-    const filePath = "all_users_timer.json";
-
-    // Load existing timer data
-    let timerData = {};
-    try {
-      const timerDataString = fs.readFileSync(filePath, "utf-8");
-      timerData = JSON.parse(timerDataString) || {};
-    } catch (error) {
-      if (error.code === "ENOENT") {
-        // If the file doesn't exist, create an empty object
-        fs.writeFileSync(filePath, "{}", "utf-8");
-      } else {
-        console.error("Error loading timer data:", error.message);
-      }
-    }
-
-    // Update the timer value for the user
-    timerData[username] = timer;
-
-    // Save updated timer data to the file
-    fs.writeFileSync(filePath, JSON.stringify(timerData, null, 2), "utf-8");
-
-    res.json({ message: "Timer value updated successfully" });
-  } catch (error) {
-    console.error(`Error updating timer value for ${username}:`, error.message);
-    res.status(500).json({ message: "Internal server error" });
-  }
-});
-
-
-// POST route for saving working time with location
+// POST route for saving working time and user location
 app.post("/api/saveWorkingTime", (req, res) => {
-  const { username, workingTime, location } = req.body;
+  const { username, workingTime, clockInLocation } = req.body;
 
   try {
-    // Update the working time and location for the user
-    allUsersData[username] = { workingTime, location };
+    // Load existing data
+    let allUsersData = loadAllUsersData();
 
-    // Send updated user data with available locations to all connected clients
-    sendUserLocations();
-
+    // Check if the user already exists in the data
+    if (allUsersData.hasOwnProperty(username)) {
+      // If the user exists, update the working time and location for that user
+      allUsersData[username].workingTime = workingTime;
+      // Add clock-in location if available
+      if (clockInLocation) {
+        allUsersData[username].location = clockInLocation;
+      }
+    } else {
+      // If the user does not exist, create a new entry for the user
+      allUsersData[username] = { workingTime, location: clockInLocation };
+    }
+    
+    // Save updated data to the file
+    saveAllUsersData(allUsersData);
     res.json({ message: "Working time and location saved successfully" });
   } catch (error) {
-    console.error(`Error saving working time and location for ${username}:`, error.message);
+    console.error(`Error saving working time for ${username}:`, error.message);
     res.status(500).json({ message: "Internal server error" });
   }
 });
-
-app.get("/api/getUserLocations", (req, res) => {
-  try {
-    const filePath = path.join(__dirname, "./all_users_data.json");
-    const allUsersDataString = fs.readFileSync(filePath, "utf-8");
-    const allUsersData = JSON.parse(allUsersDataString) || {};
-
-    const userLocations = Object.values(allUsersData)
-      .filter(user => 
-        user.location && 
-        user.location.latitude !== null && 
-        user.location.longitude !== null && 
-        !isNaN(user.location.latitude) && 
-        !isNaN(user.location.longitude)
-      )
-      .map(user => ({ username: user.username, location: [user.location.latitude, user.location.longitude] }));
-      
-    res.json(userLocations);
-  } catch (error) {
-    console.error('Error fetching user locations:', error.message);
-    res.status(500).json({ message: 'Internal server error' });
-  }
-});
-
 
 
 
