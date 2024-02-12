@@ -5,7 +5,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 mapboxgl.accessToken =
   "pk.eyJ1IjoidG9rc29uY2hpazIiLCJhIjoiY2xzZXZkNWhzMTY1NDJqbDVlNHZ0YWUzdyJ9.SYLqFmo8rDUbbMyO3N8FmA";
 
-const UserLocationsMap = () => {
+const UserLocationsMap = ({ longitude, latitude, zoomLvl, setShouldZoomToLocation, shouldZoomToLocation }) => {
   const [userLocations, setUserLocations] = useState({});
   const [map, setMap] = useState(null);
   const [markers, setMarkers] = useState([]);
@@ -15,8 +15,8 @@ const UserLocationsMap = () => {
       const mapInstance = new mapboxgl.Map({
         container: "map",
         style: "mapbox://styles/toksonchik2/clsd6hoso014401qq37gr613w",
-        center: [0, 0],
-        zoom: 1,
+        center: [0, 0], // Use provided longitude and latitude
+        zoom: 1, // Adjust zoom level as needed
       });
 
       mapInstance.addControl(new mapboxgl.NavigationControl());
@@ -28,7 +28,7 @@ const UserLocationsMap = () => {
     let ws;
 
     const connectWebSocket = () => {
-      ws = new WebSocket("wss://tnapp.onrender.com");
+      ws = new WebSocket("wss://tnapp.onrender.com/");
 
       ws.onopen = () => {
         console.log("Connected to WebSocket server");
@@ -60,7 +60,6 @@ const UserLocationsMap = () => {
       }
     };
   }, []); // Empty dependency array ensures this effect runs only once on mount
-  // Include map dependency in useEffect dependencies array
 
   useEffect(() => {
     if (map && Object.keys(userLocations).length > 0) {
@@ -79,7 +78,22 @@ const UserLocationsMap = () => {
         });
       setMarkers(newMarkers);
     }
-  }, [map, userLocations]);  
+  }, [map, userLocations]);
+
+  useEffect(() => {
+    if (shouldZoomToLocation && map) { // Check if shouldZoomToLocation is true
+      // Fly to the provided longitude and latitude
+      map.flyTo({
+        center: [longitude, latitude],
+        zoom: zoomLvl, // You can adjust the zoom level as needed
+        essential: true // This animation is considered essential with respect to prefers-reduced-motion
+      });
+      setShouldZoomToLocation(false);
+    }
+  }, [shouldZoomToLocation, map, longitude, latitude]);
+  
+  
+  
 
   return <div id="map" style={{ height: "100%", width: "100%" }} />;
 };

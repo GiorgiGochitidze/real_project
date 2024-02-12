@@ -18,7 +18,7 @@ const Workers = ({ onClockIn }) => {
 
   useEffect(() => {
     const initializeWebSocket = () => {
-      const socket = new WebSocket("wss://tnapp.onrender.com");
+      const socket = new WebSocket("wss://tnapp.onrender.com/");
 
       socket.onopen = () => {
         console.log("Connected to WebSocket server");
