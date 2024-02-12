@@ -14,7 +14,6 @@ function App() {
   const [userLocation, setUserLocation] = useState(null);
 
   const handleClockIn = (location) => {
-    console.log("User's location:", location);
     setUserLocation(location); // Set user's location in state
   };
   

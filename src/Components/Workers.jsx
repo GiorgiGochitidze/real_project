@@ -13,6 +13,39 @@ const Workers = ({ onClockIn }) => {
   const [timerStarted, setTimerStarted] = useState(false); // Track if timer has started
   const [latitude, setLatitude] = useState(null); // User's latitude
   const [longitude, setLongitude] = useState(null); // User's longitude
+  const [ws, setWs] = useState(null); // WebSocket instance
+  const [watchId, setWatchId] = useState(null); // ID of the watchPosition callback
+
+  useEffect(() => {
+    const initializeWebSocket = () => {
+      const socket = new WebSocket("wss://tnapp.onrender.com");
+
+      socket.onopen = () => {
+        console.log("Connected to WebSocket server");
+        setWs(socket);
+      };
+
+      socket.onerror = (error) => {
+        console.error("WebSocket error:", error);
+      };
+
+      socket.onclose = (event) => {
+        if (!event.wasClean) {
+          console.error(
+            `WebSocket connection closed unexpectedly: code=${event.code}, reason=${event.reason}`
+          );
+        }
+      };
+    };
+
+    initializeWebSocket();
+
+    return () => {
+      if (ws) {
+        ws.close();
+      }
+    };
+  }, [])
 
   useEffect(() => {
     fetchTime();
@@ -33,52 +66,73 @@ const Workers = ({ onClockIn }) => {
       console.error("Error fetching time:", error.message);
     }
   };
-
+  
   const clockIn = (event) => {
     event.preventDefault();
     const currentDateTime = new Date();
     setClockInTime(currentDateTime);
     setTimerStarted(true);
   
-    // Get user's location
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
+    // Function to continuously watch user's location
+    const watchUserLocation = () => {
+      const options = {
+        enableHighAccuracy: true,
+        maximumAge: 0, // Do not use a cached position
+        timeout: 5000, // Timeout in milliseconds (e.g., 5 seconds)
+      };
+
+      return navigator.geolocation.watchPosition(
         (position) => {
-          console.log("User's latitude:", position.coords.latitude);
-          console.log("User's longitude:", position.coords.longitude);
           setLatitude(position.coords.latitude);
           setLongitude(position.coords.longitude);
           if (onClockIn) {
             onClockIn({
               username,
               workingTime: null,
-              location: { latitude: position.coords.latitude, longitude: position.coords.longitude }
+              location: {
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+              },
             });
             
             // Send data to backend
             saveWorkingTime({
               username,
               workingTime: null,
-              location: { latitude: position.coords.latitude, longitude: position.coords.longitude }
+              location: {
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+              },
             });
           }
         },
         (error) => {
           console.error("Error getting user's location:", error.message);
-        }
+        },
+        options
       );
+    };
+  
+    // Get user's location
+    if (navigator.geolocation) {
+      const id = watchUserLocation(); // Start watching user's location
+      setWatchId(id); // Set the watchId
     } else {
       console.error("Geolocation is not supported by this browser.");
     }
   };
   
-
   const clockOut = () => {
     try {
       const currentDateTime = new Date();
       setClockOutTime(currentDateTime);
       setLatitude(null); // Set latitude to null
       setLongitude(null); // Set longitude to null
+  
+      // Clear the watchPosition callback to stop tracking the user's location
+      if (navigator.geolocation && watchId) {
+        navigator.geolocation.clearWatch(watchId);
+      }
   
       // Calculate working time only if it's not already set
       if (clockInTime) {
@@ -93,7 +147,6 @@ const Workers = ({ onClockIn }) => {
     }
   };
   
-
   const handlePageUnload = (event) => {
     if (timerStarted) {
       event.preventDefault();
@@ -133,7 +186,6 @@ const Workers = ({ onClockIn }) => {
       });
   };
   
-
   return (
     <>
       <header>

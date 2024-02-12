@@ -28,7 +28,7 @@ const UserLocationsMap = () => {
     let ws;
 
     const connectWebSocket = () => {
-      ws = new WebSocket("wss://tnapp.onrender.com/");
+      ws = new WebSocket("wss://tnapp.onrender.com");
 
       ws.onopen = () => {
         console.log("Connected to WebSocket server");
@@ -37,7 +37,6 @@ const UserLocationsMap = () => {
       ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
         setUserLocations(data);
-        console.log("Received location updates from WebSocket server:", data);
       };
 
       ws.onerror = (error) => {
