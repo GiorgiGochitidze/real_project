@@ -1,15 +1,13 @@
 const express = require("express");
 const http = require("http");
+const WebSocket = require("ws");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const fs = require("fs");
-const path = require("path");
-const socketIo = require("socket.io");
-
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server);
+const wss = new WebSocket.Server({ server });
 const PORT = 5000;
 
 app.use(cors());
@@ -17,11 +15,23 @@ app.use(bodyParser.json());
 
 let registeredUsers = [];
 
-const emitLocationData = () => {
-  const allUsersData = loadAllUsersData();
-  io.emit("locationData", allUsersData);
-};
+wss.on("connection", (ws) => {
+  console.log("Client connected");
+  // Send initial data to the client when they connect
+  ws.send(JSON.stringify(loadAllUsersData()));
 
+  ws.on("close", () => {
+    console.log("Client disconnected");
+  });
+});
+
+const updateUserLocations = (data) => {
+  wss.clients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify(data));
+    }
+  });
+};
 
 // Load existing data from a file on server startup
 const loadData = () => {
@@ -47,26 +57,6 @@ const saveData = () => {
       "utf-8"
     );
     console.log("Data saved successfully");
-  } catch (error) {
-    console.error("Error saving data:", error.message);
-  }
-};
-
-const loadAllUsersData = () => {
-  try {
-    const userData = fs.readFileSync("all_users_data.json", "utf-8");
-    return JSON.parse(userData) || {};
-  } catch (error) {
-    console.error("Error loading data:", error.message);
-    return {};
-  }
-};
-
-// Function to save data to all_users_data.json
-const saveAllUsersData = (data) => {
-  try {
-    fs.writeFileSync("all_users_data.json", JSON.stringify(data, null, 2), "utf-8");
-    console.log("All users data saved successfully");
   } catch (error) {
     console.error("Error saving data:", error.message);
   }
@@ -121,50 +111,59 @@ app.post("/api/login", (req, res) => {
   }
 });
 
-// POST route for saving working time and user location
 app.post("/api/saveWorkingTime", (req, res) => {
-  const { username, workingTime, clockInLocation } = req.body;
+  const { username, workingTime, location } = req.body;
 
   try {
     // Load existing data
     let allUsersData = loadAllUsersData();
 
-    // Update the user's data with the clock-in location
-    allUsersData[username] = { 
-      workingTime, 
-      lngLat: clockInLocation.lngLat || {} // Set lngLat to an empty object if it doesn't exist
+    // Update the workingTime and location
+    allUsersData[username] = {
+      ...(allUsersData[username] || {}), // Preserve existing data if any
+      workingTime,
+      location
     };
 
     // Save updated data to the file
     saveAllUsersData(allUsersData);
 
     res.json({ message: "Working time and location saved successfully" });
+    
+    // Send WebSocket update to all clients
+    updateUserLocations(allUsersData);
+
+    console.log(`Updated working time and location for user: ${username}`);
   } catch (error) {
-    console.error(`Error saving working time for ${username}:`, error.message);
+    console.error(
+      `Error saving working time and location for ${username}:`,
+      error.message
+    );
     res.status(500).json({ message: "Internal server error" });
   }
 });
 
 
+// Function to load data from all_users_data.json
+const loadAllUsersData = () => {
+  try {
+    const userData = fs.readFileSync("all_users_data.json", "utf-8");
+    return JSON.parse(userData) || {};
+  } catch (error) {
+    console.error("Error loading data:", error.message);
+    return {};
+  }
+};
 
-
-io.on("connection", (socket) => {
-  console.log("Client connected");
-
-  // When a client connects, emit the initial location data
-  emitLocationData();
-
-  socket.on("disconnect", () => {
-    console.log("Client disconnected");
-  });
-});
-
-
-// GET route for fetching user locations
-app.get("/api/getUserLocations", (req, res) => {
-  const allUsersData = loadAllUsersData();
-  res.json(allUsersData);
-});
+// Function to save data to all_users_data.json
+const saveAllUsersData = (data) => {
+  try {
+    fs.writeFileSync("./all_users_data.json", JSON.stringify(data, null, 2), "utf-8");
+    console.log("All users data saved successfully");
+  } catch (err) {
+    console.error("Error saving data:", err.message);
+  }
+};
 
 
 // GET route for the root

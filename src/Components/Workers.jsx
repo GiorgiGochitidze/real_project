@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import "../CSS/workers.css";
 
-const Workers = () => {
+const Workers = ({ onClockIn }) => {
   const { username } = useParams();
   const navigate = useNavigate();
   const [currentDate, setCurrentDate] = useState(null);
@@ -11,11 +11,17 @@ const Workers = () => {
   const [clockOutTime, setClockOutTime] = useState(null);
   const [workingTime, setWorkingTime] = useState(null);
   const [timerStarted, setTimerStarted] = useState(false); // Track if timer has started
+  const [latitude, setLatitude] = useState(null); // User's latitude
+  const [longitude, setLongitude] = useState(null); // User's longitude
 
   useEffect(() => {
     fetchTime();
     const intervalId = setInterval(fetchTime, 1000);
-    return () => clearInterval(intervalId);
+    window.addEventListener("beforeunload", handlePageUnload); // Add event listener for page unload
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener("beforeunload", handlePageUnload); // Remove event listener on cleanup
+    };
   }, []);
 
   const fetchTime = () => {
@@ -29,40 +35,71 @@ const Workers = () => {
   };
 
   const clockIn = (event) => {
-    event.preventDefault(); // Prevent the default form submission behavior
-    try {
-      const currentDateTime = new Date();
-      setClockInTime(currentDateTime);
-      setTimerStarted(true); // Set timer started flag
-      // Get user's current location when they clock in
-      getUserLocationAndSaveClockInLocation(currentDateTime);
-    } catch (error) {
-      console.error("Error clocking in:", error.message);
+    event.preventDefault();
+    const currentDateTime = new Date();
+    setClockInTime(currentDateTime);
+    setTimerStarted(true);
+  
+    // Get user's location
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          console.log("User's latitude:", position.coords.latitude);
+          console.log("User's longitude:", position.coords.longitude);
+          setLatitude(position.coords.latitude);
+          setLongitude(position.coords.longitude);
+          if (onClockIn) {
+            onClockIn({
+              username,
+              workingTime: null,
+              location: { latitude: position.coords.latitude, longitude: position.coords.longitude }
+            });
+            
+            // Send data to backend
+            saveWorkingTime({
+              username,
+              workingTime: null,
+              location: { latitude: position.coords.latitude, longitude: position.coords.longitude }
+            });
+          }
+        },
+        (error) => {
+          console.error("Error getting user's location:", error.message);
+        }
+      );
+    } else {
+      console.error("Geolocation is not supported by this browser.");
     }
   };
+  
 
   const clockOut = () => {
     try {
       const currentDateTime = new Date();
       setClockOutTime(currentDateTime);
+      setLatitude(null); // Set latitude to null
+      setLongitude(null); // Set longitude to null
   
       // Calculate working time only if it's not already set
-      if (!workingTime && clockInTime) {
+      if (clockInTime) {
         const diffMilliseconds = currentDateTime - clockInTime;
         const seconds = Math.floor(diffMilliseconds / 1000);
         setWorkingTime(seconds);
         // Save working time here
-        saveWorkingTime({ username, workingTime: seconds });
+        saveWorkingTime({ username, workingTime: seconds, location: null }); // Send location as null
       }
-  
-      // Set user location to an empty object
-      saveWorkingTime({ username, workingTime: null, clockInLocation: {} });
     } catch (error) {
       console.error("Error clocking out:", error.message);
     }
   };
   
-  
+
+  const handlePageUnload = (event) => {
+    if (timerStarted) {
+      event.preventDefault();
+      event.returnValue = ""; // For Chrome
+    }
+  };
 
   const resetTimer = () => {
     try {
@@ -74,55 +111,27 @@ const Workers = () => {
       console.error("Error resetting timer:", error.message);
     }
   };
-
   const saveWorkingTime = (data) => {
-    try {
-      fetch("https://tnapp.onrender.com/api/saveWorkingTime", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
+    fetch("https://tnapp.onrender.com/api/saveWorkingTime", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
       })
-        .then((response) => response.json())
-        .then((data) => {
-          console.log(data.message);
-        })
-        .catch((error) => {
-          console.error("Error saving working time:", error.message);
-        });
-    } catch (error) {
-      console.error("Error saving working time:", error.message);
-    }
+      .then((data) => {
+        console.log(data.message);
+      })
+      .catch((error) => {
+        console.error("Error saving working time:", error.message);
+      });
   };
-
-  const getUserLocationAndSaveClockInLocation = (clockInDateTime) => {
-    try {
-      if ("geolocation" in navigator) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const { latitude, longitude } = position.coords;
-            const clockInLocation = { lngLat: [longitude, latitude] }; // Change the format
-            // Save clock-in location along with the clock-in time
-            saveWorkingTime({
-              username,
-              workingTime: null,
-              clockInLocation,
-            });
-          },
-          (error) => {
-            console.error("Error getting user's location:", error.message);
-          }
-        );
-      } else {
-        console.error("Geolocation is not supported.");
-      }
-    } catch (error) {
-      console.error("Error getting user's location and saving clock-in location:", error.message);
-    }
-  };
-  
-  
   
 
   return (
