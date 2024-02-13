@@ -45,7 +45,7 @@ const Workers = ({ onClockIn }) => {
         ws.close();
       }
     };
-  }, [])
+  }, []);
 
   useEffect(() => {
     fetchTime();
@@ -83,26 +83,21 @@ const Workers = ({ onClockIn }) => {
 
       return navigator.geolocation.watchPosition(
         (position) => {
-          setLatitude(position.coords.latitude);
-          setLongitude(position.coords.longitude);
+          const { latitude, longitude } = position.coords;
+          setLatitude(latitude);
+          setLongitude(longitude);
           if (onClockIn) {
             onClockIn({
               username,
               workingTime: null,
-              location: {
-                latitude: position.coords.latitude,
-                longitude: position.coords.longitude,
-              },
+              location: { latitude, longitude },
             });
             
             // Send data to backend
             saveWorkingTime({
               username,
               workingTime: null,
-              location: {
-                latitude: position.coords.latitude,
-                longitude: position.coords.longitude,
-              },
+              location: { latitude, longitude },
             });
           }
         },
