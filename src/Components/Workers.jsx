@@ -72,7 +72,7 @@ const Workers = ({ onClockIn }) => {
     const currentDateTime = new Date();
     setClockInTime(currentDateTime);
     setTimerStarted(true);
-  
+    
     // Function to continuously watch user's location
     const watchUserLocation = () => {
       const options = {
@@ -107,7 +107,7 @@ const Workers = ({ onClockIn }) => {
         options
       );
     };
-  
+    
     // Get user's location
     if (navigator.geolocation) {
       const id = watchUserLocation(); // Start watching user's location
@@ -121,14 +121,12 @@ const Workers = ({ onClockIn }) => {
     try {
       const currentDateTime = new Date();
       setClockOutTime(currentDateTime);
-      setLatitude(null); // Set latitude to null
-      setLongitude(null); // Set longitude to null
-  
+      
       // Clear the watchPosition callback to stop tracking the user's location
       if (navigator.geolocation && watchId) {
         navigator.geolocation.clearWatch(watchId);
       }
-  
+      
       // Calculate working time only if it's not already set
       if (clockInTime) {
         const diffMilliseconds = currentDateTime - clockInTime;
@@ -159,6 +157,7 @@ const Workers = ({ onClockIn }) => {
       console.error("Error resetting timer:", error.message);
     }
   };
+  
   const saveWorkingTime = (data) => {
     fetch("https://tnapp.onrender.com/api/saveWorkingTime", {
       method: "POST",
