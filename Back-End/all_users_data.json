@@ -1,9 +1,6 @@
 {
   "gigi": {
-    "workingTime": null,
-    "location": {
-      "latitude": 41.65110015869141,
-      "longitude": 41.63626861572266
-    }
+    "workingTime": 2,
+    "location": null
   }
 }
