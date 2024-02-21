@@ -66,56 +66,35 @@ const Workers = ({ onClockIn }) => {
       console.error("Error fetching time:", error.message);
     }
   };
-  
-  const clockIn = (event) => {
-    event.preventDefault();
-    const currentDateTime = new Date();
-    setClockInTime(currentDateTime);
-    setTimerStarted(true);
-    
-    // Function to continuously watch user's location
-    const watchUserLocation = () => {
-      const options = {
-        enableHighAccuracy: true,
-        maximumAge: 0, // Do not use a cached position
-        timeout: 5000, // Timeout in milliseconds (e.g., 5 seconds)
-      };
 
-      return navigator.geolocation.watchPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          setLatitude(latitude);
-          setLongitude(longitude);
-          if (onClockIn) {
-            onClockIn({
-              username,
-              workingTime: null,
-              location: { latitude, longitude },
-            });
-            
-            // Send data to backend
-            saveWorkingTime({
-              username,
-              workingTime: null,
-              location: { latitude, longitude },
-            });
-          }
-        },
-        (error) => {
-          console.error("Error getting user's location:", error.message);
-        },
-        options
-      );
-    };
-    
-    // Get user's location
-    if (navigator.geolocation) {
-      const id = watchUserLocation(); // Start watching user's location
-      setWatchId(id); // Set the watchId
-    } else {
-      console.error("Geolocation is not supported by this browser.");
+
+const clockIn = (event) => {
+  event.preventDefault();
+  const currentDateTime = new Date();
+  setClockInTime(currentDateTime);
+  setTimerStarted(true);
+
+  // Fetch the user's location using the Geolocation API
+  navigator.geolocation.getCurrentPosition(
+    position => {
+      const { latitude, longitude } = position.coords;
+
+      // Send a message to the service worker with the location data
+      navigator.serviceWorker.controller.postMessage({ type: 'location', latitude, longitude });
+
+      // Update state with the user's location
+      setLatitude(latitude);
+      setLongitude(longitude);
+
+      // Save working time here
+      saveWorkingTime({ username, workingTime: null, location: { latitude, longitude } });
+    },
+    error => {
+      console.error('Error getting user location:', error.message);
     }
-  };
+  );
+};
+
   
   const clockOut = () => {
     try {
