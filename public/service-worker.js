@@ -15,12 +15,12 @@ self.addEventListener("sync", (event) => {
   
   function syncLocation(latitude, longitude) {
     // Send location data to the server
-    fetch("https://tnapp.onrender.com/api/saveLocation", {
+    fetch("https://tnapp.onrender.com/api/saveWorkingTime", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ latitude, longitude }),
+      body: JSON.stringify({ username: 'username', workingTime: null, location: { latitude, longitude } }),
     })
       .then((response) => {
         if (!response.ok) {
@@ -32,6 +32,7 @@ self.addEventListener("sync", (event) => {
         console.error("Error syncing location data:", error.message);
       });
   }
+  
   
   // To trigger background sync from your main app code
   navigator.serviceWorker.ready.then((registration) => {
