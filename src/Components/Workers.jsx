@@ -57,54 +57,6 @@ const Workers = ({ onClockIn }) => {
     };
   }, []);
 
-  useEffect(() => {
-    // Function to handle controller change
-    const handleControllerChange = () => {
-      if (navigator.serviceWorker.controller) {
-        // Controller is available, send message to service worker
-        sendMessageToServiceWorker();
-      }
-    };
-  
-    // Listen for controller change event
-    navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange);
-  
-    // Cleanup function
-    return () => {
-      navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange);
-    };
-  }, []);
-
-  // Function to send message to service worker
-const sendMessageToServiceWorker = () => {
-  if (navigator.serviceWorker.controller) {
-    const { latitude, longitude } = position.coords;
-    navigator.serviceWorker.controller.postMessage({ type: 'location', latitude, longitude });
-  }
-};
-
-// Function to handle geolocation success
-const handleGeolocationSuccess = (position) => {
-  const { latitude, longitude } = position.coords;
-  setLatitude(latitude);
-  setLongitude(longitude);
-  
-  // Check if service worker controller is available
-  if (navigator.serviceWorker.controller) {
-    sendMessageToServiceWorker();
-  } else {
-    console.warn('Service worker controller not available yet.');
-  }
-
-  // Save working time here
-  saveWorkingTime({ username, workingTime: null, location: { latitude, longitude } });
-};
-
-// Function to handle geolocation error
-const handleGeolocationError = (error) => {
-  console.error('Error getting user location:', error.message);
-};
-
   const fetchTime = () => {
     try {
       const currentDateObj = new Date();
@@ -115,7 +67,6 @@ const handleGeolocationError = (error) => {
     }
   };
 
-
   const clockIn = (event) => {
     event.preventDefault();
     const currentDateTime = new Date();
@@ -123,9 +74,23 @@ const handleGeolocationError = (error) => {
     setTimerStarted(true);
   
     // Fetch the user's location using the Geolocation API
-    navigator.geolocation.getCurrentPosition(handleGeolocationSuccess, handleGeolocationError);
+    navigator.geolocation.getCurrentPosition(
+      position => {
+        const { latitude, longitude } = position.coords;
+  
+        // Call saveWorkingTime with the location data
+        saveWorkingTime({ username, workingTime: null, location: { latitude, longitude } });
+  
+        // Update state with the user's location
+        setLatitude(latitude);
+        setLongitude(longitude);
+      },
+      error => {
+        console.error('Error getting user location:', error.message);
+      }
+    );
   };
-
+  
   
   const clockOut = () => {
     try {
