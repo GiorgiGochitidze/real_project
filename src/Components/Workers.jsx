@@ -57,6 +57,22 @@ const Workers = ({ onClockIn }) => {
     };
   }, []);
 
+  useEffect(() => {
+    // Start watching the user's position when the component mounts
+    const watchId = navigator.geolocation.watchPosition(
+      handleGeolocationSuccess,
+      handleGeolocationError
+    );
+    setWatchId(watchId);
+
+    return () => {
+      // Stop watching the user's position when the component unmounts
+      if (watchId) {
+        navigator.geolocation.clearWatch(watchId);
+      }
+    };
+  }, []);
+
   const fetchTime = () => {
     try {
       const currentDateObj = new Date();
@@ -65,6 +81,16 @@ const Workers = ({ onClockIn }) => {
     } catch (error) {
       console.error("Error fetching time:", error.message);
     }
+  };
+
+  const handleGeolocationSuccess = (position) => {
+    const { latitude, longitude } = position.coords;
+    setLatitude(latitude);
+    setLongitude(longitude);
+  };
+
+  const handleGeolocationError = (error) => {
+    console.error('Error getting user location:', error.message);
   };
 
   const clockIn = (event) => {
