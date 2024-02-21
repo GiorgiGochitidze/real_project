@@ -18,12 +18,14 @@ if ('serviceWorker' in navigator) {
           // Service worker is ready
           console.log('Service Worker is ready');
           // Proceed with any additional setup (e.g., background sync registration)
+          registration.sync.register("sync-location");
         } else {
           registration.addEventListener('statechange', () => {
             if (registration.active && registration.active.state === 'activated') {
               // Service worker is ready
               console.log('Service Worker is ready');
               // Proceed with any additional setup (e.g., background sync registration)
+              registration.sync.register("sync-location");
             }
           });
         }
