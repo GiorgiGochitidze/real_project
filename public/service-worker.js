@@ -9,6 +9,7 @@ self.addEventListener('sync', function(event) {
     const locationData = await getStoredLocationData();
     // Send location data to the server
     await sendDataToServer(locationData);
+    console.log('sync location data console', locationData)
   }
   
   async function getStoredLocationData() {
