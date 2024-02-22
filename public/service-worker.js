@@ -29,7 +29,10 @@ self.addEventListener('sync', function(event) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(data)
+
     });
+
+    console.log(data)
     if (!response.ok) {
       throw new Error('Failed to send data to server');
     }
