@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { openDB } from 'idb'; // Import openDB from idb
 import "../CSS/workers.css";
 
 const Workers = ({ onClockIn }) => {
@@ -47,6 +48,18 @@ const Workers = ({ onClockIn }) => {
     };
   }, []);
 
+  async function storeLocationData(location) {
+    const db = await openDB('location-db', 1, {
+      upgrade(db) {
+        db.createObjectStore('locations', { autoIncrement: true });
+      },
+    });
+    const tx = db.transaction('locations', 'readwrite');
+    const store = tx.objectStore('locations');
+    await store.add(location);
+  }
+
+
   useEffect(() => {
     fetchTime();
     const intervalId = setInterval(fetchTime, 1000);
@@ -66,13 +79,13 @@ const Workers = ({ onClockIn }) => {
       console.error("Error fetching time:", error.message);
     }
   };
-  
+
   const clockIn = (event) => {
     event.preventDefault();
     const currentDateTime = new Date();
     setClockInTime(currentDateTime);
     setTimerStarted(true);
-    
+  
     // Function to continuously watch user's location
     const watchUserLocation = () => {
       const options = {
@@ -80,25 +93,31 @@ const Workers = ({ onClockIn }) => {
         maximumAge: 0, // Do not use a cached position
         timeout: 5000, // Timeout in milliseconds (e.g., 5 seconds)
       };
-
+  
       return navigator.geolocation.watchPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
           setLatitude(latitude);
           setLongitude(longitude);
+  
+          const location = { latitude, longitude };
+  
+          // Send data to the server
           if (onClockIn) {
             onClockIn({
               username,
               workingTime: null,
-              location: { latitude, longitude },
+              location,
             });
             
             // Send data to backend
             saveWorkingTime({
               username,
               workingTime: null,
-              location: { latitude, longitude },
+              location,
             });
+  
+            storeLocationData(location); // Store location data
           }
         },
         (error) => {
@@ -107,7 +126,7 @@ const Workers = ({ onClockIn }) => {
         options
       );
     };
-    
+  
     // Get user's location
     if (navigator.geolocation) {
       const id = watchUserLocation(); // Start watching user's location

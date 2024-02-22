@@ -12,6 +12,7 @@ import Tracker from './Components/Tracker';
 
 function App() {
   const [userLocation, setUserLocation] = useState(null);
+ 
 
   const handleClockIn = (location) => {
     setUserLocation(location); // Set user's location in state

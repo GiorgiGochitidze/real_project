@@ -1,6 +1,10 @@
 {
   "gigi": {
-    "workingTime": 30,
+    "workingTime": 1,
+    "location": null
+  },
+  "giga": {
+    "workingTime": 18,
     "location": null
   }
 }
