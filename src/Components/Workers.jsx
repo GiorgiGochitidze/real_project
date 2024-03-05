@@ -70,6 +70,31 @@ const Workers = ({ onClockIn }) => {
     };
   }, []);
 
+  useEffect(() => {
+    const registerBackgroundSync = async () => {
+        if ('serviceWorker' in navigator) {
+            try {
+                const registration = await navigator.serviceWorker.ready;
+                await registration.sync.register('syncLocationData');
+            } catch (error) {
+                console.error('Background sync registration failed:', error);
+            }
+        }
+    };
+
+    const syncLocationInBackground = () => {
+        setInterval(async () => {
+            try {
+                await registerBackgroundSync();
+            } catch (error) {
+                console.error('Error triggering background sync:', error);
+            }
+        }, 60 * 1000); // 30 minutes interval
+    };
+
+    syncLocationInBackground();
+}, []);
+
   const fetchTime = () => {
     try {
       const currentDateObj = new Date();
